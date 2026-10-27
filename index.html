@@ -1,3 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1D5C8F" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15202A" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Internal medicine office billing helper: E/M, preventive and add-on codes with 2026 work RVUs.">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="IM Coder">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px;font-family:system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>IM Visit Coder</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,6 +38,7 @@
   --win:#5DC797; --win-soft:#132E25; --warn:#E6B35F; --warn-soft:#33281A; --info-soft:#1A2733; color-scheme:dark}
 
 *{box-sizing:border-box}
+button{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 html,body{background:var(--paper)}
 body{color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
@@ -123,7 +139,8 @@ td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:righ
 a{color:var(--accent)}
 @media (prefers-reduced-motion:no-preference){.seg button,.chk{transition:background .12s,border-color .12s,color .12s}}
 </style>
-
+</head>
+<body>
 <div class="wrap">
   <header class="top">
     <div>
@@ -275,7 +292,8 @@ a{color:var(--accent)}
       </section>
       <section>
         <h3>Put this app on your home screen</h3>
-        <p>On your Android phone, open this page in Chrome, tap the ⋮ menu, then <b>Add to Home screen</b>. It opens like an app. It needs an internet connection.</p>
+        <p>Open <b>daikonfuji.github.io/im-visit-coder</b> on your phone. <b>Chrome:</b> tap ⋮, then <b>Add to Home screen</b> (or <b>Install app</b>). <b>Firefox:</b> tap ⋮, then <b>Add app to Home screen</b>. It opens full-screen like an app and keeps working without signal after the first visit.</p>
+        <p>On a computer, the same link shows the codes beside the form.</p>
         <p>Sources: CMS 2026 Physician Fee Schedule relative value file; AMA CPT E/M guidelines; CMS CR 13705 (G2211 with modifier 25); Illinois HFS, Meridian, Aetna Better Health IL and Ambetter IL payer notices.</p>
       </section>
     </div>
@@ -474,3 +492,6 @@ $("#bar").addEventListener("click",jump);$("#bar").addEventListener("keydown",e=
 render();
 })();
 </script>
+<script>if("serviceWorker" in navigator&&location.protocol==="https:"){addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "IM Visit Coder",
+  "short_name": "IM Coder",
+  "description": "Internal medicine office billing helper with 2026 work RVUs.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#EEF2F5",
+  "theme_color": "#1D5C8F",
+  "icons": [
+    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}
