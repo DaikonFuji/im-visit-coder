@@ -162,13 +162,13 @@ a{color:var(--accent)}
             <div class="seg" data-key="pt"><button data-val="new">New<small>no visit in 3 yrs</small></button><button data-val="est">Established</button></div></div>
           <div class="field"><div class="label">Insurance</div>
             <div class="seg" data-key="payer"><button data-val="medicare">Medicare</button><button data-val="medicaid">IL Medicaid</button><button data-val="private">Private</button></div></div>
-          <div class="field" id="f-mplan"><div class="label">Medicaid plan</div>
-            <div class="seg" data-key="mplan"><button data-val="mco">Managed care<small>Meridian, Aetna, BCBS, CountyCare, Molina</small></button><button data-val="ffs">HFS fee-for-service</button></div></div>
         </section>
 
         <section class="step">
           <h2><span class="n">2</span>Visit type</h2>
           <div class="seg" data-key="visit"><button data-val="annual">Annual physical</button><button data-val="fu">Follow-up / problem visit</button></div>
+          <div class="field" id="f-mplan"><div class="label">How your clinic bills Medicaid annuals</div>
+            <div class="seg" data-key="mannual"><button data-val="office">Office visit only<small>new / follow-up codes</small></button><button data-val="prev">Preventive code<small>99385–99397, HFS handbook</small></button></div></div>
           <div id="annual-box" class="row2">
             <div class="field" id="f-awv"><div class="label">Medicare annual visit</div>
               <div class="seg" data-key="awv"><button data-val="ippe">IPPE<small>1st yr of Part B</small></button><button data-val="init">First AWV</button><button data-val="sub">Repeat AWV</button></div></div>
@@ -233,7 +233,7 @@ a{color:var(--accent)}
           <div class="field"><div class="label" id="time-label">Your total minutes today</div>
             <div class="hint" id="time-hint">Everything you did on this date: chart prep, visit, orders, notes, coordination. Not staff time.</div>
             <div class="stepper"><button data-tstep="-5" aria-label="5 minutes less">−5</button><input id="minutes" type="number" inputmode="numeric" min="0" max="300" value="0" aria-labelledby="time-label"><button data-tstep="5" aria-label="5 minutes more">+5</button></div></div>
-          <div class="field"><div class="label">Ongoing longitudinal care or serious/complex condition? <span class="hint">(G2211)</span></div>
+          <div class="field" id="f-g2211"><div class="label">Ongoing longitudinal care or serious/complex condition? <span class="hint">(G2211)</span></div>
             <div class="seg" data-key="g2211"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
         </section>
       </div>
@@ -284,8 +284,9 @@ a{color:var(--accent)}
         <h3>Add-ons by payer</h3>
         <div class="tw"><table>
           <tr><th>Rule</th><th>Medicare</th><th>IL Medicaid</th><th>Private</th></tr>
-          <tr><td>Annual + problem (-25)</td><td>Paid</td><td>HFS FFS: one code only. MCOs vary (Aetna pays; Centene plans ~50%)</td><td>Usually paid; some cut to 50%</td></tr>
-          <tr><td>G2211 (+0.33)</td><td>Paid; OK on -25 with AWV/IPPE since 2025</td><td>Denied (Meridian notice 2026)</td><td>Varies; Ambetter IL stopped Apr 2026</td></tr>
+          <tr><td>Annual visit</td><td>IPPE / AWV only</td><td>Many clinics bill office visits only. HFS handbook allows 1 preventive visit per 333 days, age 21+</td><td>99385–99397</td></tr>
+          <tr><td>Annual + problem (-25)</td><td>Paid</td><td>Not paid together: bill one code</td><td>Usually paid; some cut to 50%</td></tr>
+          <tr><td>G2211 (+0.33)</td><td>Paid; OK on -25 with AWV/IPPE since 2025</td><td>Not paid; don't bill</td><td>Varies; Ambetter IL stopped Apr 2026</td></tr>
           <tr><td>Prolonged (+0.61 / 15 min)</td><td>G2212: 99215 at 69 min, 99205 at 89</td><td>99417: 55 / 75 min (verify)</td><td>99417: 55 / 75 min</td></tr>
           <tr><td>AWV extras</td><td>99497-33 ACP (1.50); G0444 depression screen with repeat AWV (0.18)</td><td>–</td><td>–</td></tr>
         </table></div>
@@ -313,7 +314,7 @@ const D={"99202":"New patient, straightforward MDM","99203":"New patient, low MD
  "G0402":"IPPE (Welcome to Medicare)","G0438":"Annual wellness visit, first","G0439":"Annual wellness visit, repeat",
  "G2211":"Visit complexity add-on","G2212":"Prolonged visit (Medicare), per 15 min","99417":"Prolonged visit, per 15 min","99497":"Advance care planning, first 30 min","G0444":"Annual depression screen"};
 const LV=["—","Straightforward","Low","Moderate","High"];
-const EXAMPLE={pt:"est",payer:"medicare",mplan:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",acute:"none",chronic:"w2",
+const EXAMPLE={pt:"est",payer:"medicare",mannual:"office",visit:"fu",awv:"sub",age:"65",aprob:"yes",acute:"none",chronic:"w2",
  undx:false,severe:false,items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false};
 const BLANK=Object.assign({},EXAMPLE,{chronic:"none",items:0,risk:"min",minutes:0});
 let S=Object.assign({},EXAMPLE);
@@ -361,9 +362,11 @@ function compute(){
   const out={lines:[],notes:[],pv:null,total:0};
   const add=(code,mod,w,desc,units)=>out.lines.push({code,mod:mod||"",w:(w===undefined?W[code]:w),desc:desc||D[code],units:units||1});
   const mc=S.payer==="medicare", md=S.payer==="medicaid", pr=S.payer==="private";
-  const annual=S.visit==="annual";
+  const asOffice=md&&S.visit==="annual"&&S.mannual==="office";
+  const annual=S.visit==="annual"&&!asOffice;
   const hasProb=!annual||S.aprob==="yes";
   const noProblems=probLevel()===0;
+  if(asOffice)out.notes.push({t:"info",m:"Illinois Medicaid, your clinic's rule: no annual code. The visit is billed as a "+(S.pt==="new"?"new":"follow-up")+" office visit, leveled on the problems you addressed."});
 
   // preventive
   let prev=null;
@@ -376,25 +379,26 @@ function compute(){
   // problem E/M
   let pv=null, emPt=S.pt;
   if(hasProb && !noProblems){
-    if(annual && !mc && S.pt==="new"){emPt="est";out.notes.push({t:"info",m:"Most payers allow one new-patient code per day, so the -25 problem visit uses the established code."});}
+    if(annual && pr && S.pt==="new"){emPt="est";out.notes.push({t:"info",m:"Most payers allow one new-patient code per day, so the -25 problem visit uses the established code."});}
     pv=problemVisit(emPt,S.payer,S.minutes); out.pv=pv;
   }
   const g2211Wanted=S.g2211==="yes" && pv;
   const g2211Pays=g2211Wanted && !md;
 
   if(annual){
-    const ffsSingle=md && S.mplan==="ffs" && pv;
-    if(ffsSingle){
-      const emTotal=pv.best==="time"?pv.time.base:pv.mdm.base;
-      if(emTotal>W[prev]){pushEM(pv,"",add);}else{add(prev);}
-      out.notes.push({t:"warn",m:"Illinois HFS fee-for-service does not pay a preventive code and a problem visit in the same session. Bill the single code that best fits the visit; the higher-wRVU one is shown."});
+    if(md){
+      if(pv){
+        const emTotal=pv.best==="time"?pv.time.base:pv.mdm.base;
+        if(emTotal>W[prev]){pushEM(pv,"",add);}else{add(prev);}
+        out.notes.push({t:"warn",m:"Illinois Medicaid does not pay a preventive code and an office visit in the same session. Bill the single code that best fits the visit; the higher-wRVU one is shown."});
+      }else add(prev);
+      out.notes.push({t:"info",m:"HFS allows one adult preventive visit per 333 days (age 21+). Ages 18–20 follow Healthy Kids rules."});
     }else{
       add(prev);
       if(mc&&S.acp)add("99497",(S.awv==="ippe"?"":"33"));
       if(mc&&S.dep&&S.awv==="sub")add("G0444");
       if(pv){pushEM(pv,"25",add);
         if(mc)out.notes.push({t:"info",m:"Tell the patient the -25 problem visit may carry a copay or deductible, unlike the AWV."});
-        if(md)out.notes.push({t:"warn",m:"Managed care plans differ: Aetna Better Health IL pays the -25 visit; Centene plans (e.g. Meridian) may pay about 50% of it."});
         if(pr)out.notes.push({t:"warn",m:"Some private plans cut the -25 problem visit to 50% and the patient may owe a copay."});
       }
     }
@@ -402,12 +406,12 @@ function compute(){
   }else if(pv){
     pushEM(pv,"",add);
   }
-  if(g2211Pays && !(md&&S.mplan==="ffs"&&annual)){
+  if(g2211Pays){
     add("G2211");
     if(annual&&mc)out.notes.push({t:"info",m:"G2211 on a -25 visit is payable because it is billed with an AWV/IPPE (Medicare rule since 2025)."});
     if(pr)out.notes.push({t:"warn",m:"Many private plans don't pay G2211 (Ambetter IL stopped in April 2026). Confirm with the payer."});
   }
-  if(g2211Wanted && md)out.notes.push({t:"warn",m:"G2211 left off: Illinois Medicaid plans deny it (e.g. Meridian, 2026)."});
+  if(md&&pv)out.notes.push({t:"info",m:"No G2211: Illinois Medicaid does not pay it."});
   if(pv&&pv.time&&pv.time.pro.units&&md)out.notes.push({t:"warn",m:"Confirm your Medicaid plan pays prolonged time (99417)."});
 
   // level-up hints
@@ -417,7 +421,7 @@ function compute(){
     else{const pro=prolonged(emPt,S.minutes,S.payer);out.notes.push({t:"up",m:"Next prolonged unit ("+pro.code+") at "+pro.next+" min."});}
   }
   if(hasProb&&noProblems)out.notes.unshift({t:"warn",m:"Pick at least one problem in step 3 to level the "+(annual?"-25 ":"")+"visit."});
-  if(annual && hasProb && S.aprob==="yes")out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
+  if(annual && !md && hasProb && S.aprob==="yes")out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
 
   out.total=out.lines.reduce((s,l)=>s+l.w*l.units,0);
   return out;
@@ -435,9 +439,11 @@ function render(){
   $$("[data-flag]").forEach(b=>b.setAttribute("aria-pressed",String(!!S[b.dataset.flag])));
   $("#items-out").textContent=S.items;
   const mi=$("#minutes"); if(document.activeElement!==mi)mi.value=S.minutes||"";
-  const annual=S.visit==="annual", mc=S.payer==="medicare";
+  const mc=S.payer==="medicare", md=S.payer==="medicaid";
+  const annual=S.visit==="annual"&&!(md&&S.mannual==="office");
   const hasProb=!annual||S.aprob==="yes";
-  $("#f-mplan").hidden=S.payer!=="medicaid";
+  $("#f-mplan").hidden=!(md&&S.visit==="annual");
+  $("#f-g2211").hidden=md;
   $("#annual-box").hidden=!annual;
   $("#f-awv").hidden=!mc; $("#f-age").hidden=mc; $("#f-addons").hidden=!mc;
   const dep=$('[data-flag="dep"]'); dep.disabled=S.awv!=="sub"; dep.textContent=S.awv==="sub"?"Depression screen (G0444)":"Depression screen (G0444) — repeat AWV only";
@@ -472,7 +478,7 @@ function render(){
   $("#copy").onclick=e=>{const txt=summary+" — "+f2(o.total)+" wRVU";const b=e.currentTarget;
     const done=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy codes",1500)};
     try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(_){b.textContent=txt}};
-  $("#reset").onclick=()=>{S=Object.assign({},BLANK,{payer:S.payer,pt:S.pt,mplan:S.mplan});render();};
+  $("#reset").onclick=()=>{S=Object.assign({},BLANK,{payer:S.payer,pt:S.pt,mannual:S.mannual});render();};
   $("#example").onclick=()=>{S=Object.assign({},EXAMPLE);render();};
 }
 
