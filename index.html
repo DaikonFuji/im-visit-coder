@@ -1,0 +1,476 @@
+<title>IM Visit Coder</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: phone-first stack of numbered steps; on wide screens inputs left, sticky superbill right. Sticky total bar on phones. */
+:root{
+  --paper:#EEF2F5; --surface:#FFFFFF; --ink:#13202A; --muted:#566775; --line:#D3DCE3;
+  --accent:#1D5C8F; --accent-ink:#FFFFFF; --accent-soft:#E0EBF5;
+  --win:#1C7550; --win-soft:#E0F1E8; --warn:#8F5400; --warn-soft:#FBEFD9; --info-soft:#E8EEF3;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#0D141A; --surface:#15202A; --ink:#E5ECF1; --muted:#93A4B2; --line:#283744;
+  --accent:#74AEE2; --accent-ink:#0B1620; --accent-soft:#1B2E40;
+  --win:#5DC797; --win-soft:#132E25; --warn:#E6B35F; --warn-soft:#33281A; --info-soft:#1A2733; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#0D141A; --surface:#15202A; --ink:#E5ECF1; --muted:#93A4B2; --line:#283744;
+  --accent:#74AEE2; --accent-ink:#0B1620; --accent-soft:#1B2E40;
+  --win:#5DC797; --win-soft:#132E25; --warn:#E6B35F; --warn-soft:#33281A; --info-soft:#1A2733; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--paper)}
+body{color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 96px}
+.wrap{max-width:1080px;margin:0 auto}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:18px 10px}
+h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:.01em;margin:0;line-height:1}
+.sub{color:var(--muted);font-size:13px;margin-top:4px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.tabs button{border:0;background:transparent;color:var(--muted);font:600 14px var(--f-body);padding:7px 14px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);color:var(--accent-ink)}
+
+.grid{display:grid;grid-template-columns:1fr;gap:16px;align-items:start}
+@media (min-width:880px){.grid{grid-template-columns:minmax(0,1fr) 400px}.result-col{position:sticky;top:calc(env(safe-area-inset-top,0px) + 12px)}#bar{display:none!important}}
+
+.step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px}
+.inputs{display:grid;gap:12px;min-width:0}
+.step h2{margin:0;font-family:var(--f-display);font-weight:600;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);display:flex;gap:8px;align-items:baseline}
+.step h2 .n{font-family:var(--f-mono);color:var(--accent);letter-spacing:0}
+.field{display:grid;gap:6px;min-width:0}
+.label{font-weight:600;font-size:14px}
+.hint{color:var(--muted);font-size:12.5px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button,.chk{flex:1 1 auto;min-height:44px;border:1px solid var(--line);background:var(--paper);color:var(--ink);
+  font:500 14px var(--f-body);padding:8px 12px;border-radius:8px;cursor:pointer;text-align:center;line-height:1.2}
+.seg button small{display:block;color:var(--muted);font-size:11.5px;font-weight:400;margin-top:2px}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.seg button[aria-pressed="true"] small{color:var(--accent-ink);opacity:.85}
+.chks{display:grid;gap:6px}
+.chk{display:flex;align-items:center;gap:10px;text-align:left;flex:none}
+.chk::before{content:"";width:18px;height:18px;flex:none;border-radius:4px;border:2px solid var(--muted);background:var(--surface)}
+.chk[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.chk[aria-pressed="true"]::before{background:var(--accent);border-color:var(--accent);
+  box-shadow:inset 0 0 0 3px var(--surface)}
+.chk:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper button{width:44px;height:44px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 20px var(--f-body);cursor:pointer}
+.stepper output,.stepper input{min-width:64px;text-align:center;font:600 20px var(--f-mono);font-variant-numeric:tabular-nums}
+.stepper input{width:84px;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+
+/* superbill */
+.bill{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.bill-head{display:flex;justify-content:space-between;align-items:flex-end;gap:8px;padding:14px 14px 10px;border-bottom:1px dashed var(--line)}
+.eyebrow{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.total{font-family:var(--f-mono);font-weight:600;font-size:34px;line-height:1;font-variant-numeric:tabular-nums}
+.total span{font-size:14px;color:var(--muted);font-family:var(--f-body);font-weight:500;margin-left:4px}
+.codes{list-style:none;margin:0;padding:6px 0}
+.codes li{display:grid;grid-template-columns:auto 1fr auto;gap:2px 10px;padding:8px 14px;align-items:baseline}
+.codes .code{font-family:var(--f-mono);font-weight:600;font-size:18px}
+.codes .mod{font-family:var(--f-mono);font-size:13px;color:var(--accent);margin-left:2px}
+.codes .desc{color:var(--muted);font-size:13px;grid-column:1/3}
+.codes .w{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:500;grid-row:1;grid-column:3}
+.codes .empty{color:var(--muted);grid-column:1/-1}
+.cmp{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line)}
+.cmp div{padding:10px 14px;display:grid;gap:2px;min-width:0}
+.cmp div+div{border-left:1px solid var(--line)}
+.cmp .k{font-size:12px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.cmp .v{font-family:var(--f-mono);font-weight:600;font-size:15px;overflow-wrap:anywhere}
+.cmp .s{font-size:12.5px;color:var(--muted)}
+.cmp .best{background:var(--win-soft)}
+.cmp .best .k{color:var(--win)}
+.badge{display:inline-block;font:600 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;background:var(--win);color:var(--surface);padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:1px}
+.mdm{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line)}
+.mdm div{padding:8px 10px;display:grid;gap:2px;min-width:0}
+.mdm div+div{border-left:1px solid var(--line)}
+.mdm .k{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.mdm .v{font-weight:600;font-size:13px}
+.mdm .met{color:var(--win)}
+.notes{list-style:none;margin:0;padding:10px 14px;display:grid;gap:8px;border-top:1px solid var(--line)}
+.notes li{font-size:13px;padding:8px 10px;border-radius:8px;background:var(--info-soft)}
+.notes li.warn{background:var(--warn-soft);color:var(--ink);border-left:3px solid var(--warn)}
+.notes li.up{background:var(--win-soft);border-left:3px solid var(--win)}
+.actions{display:flex;gap:8px;padding:0 14px 14px;flex-wrap:wrap}
+.btn{min-height:42px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 14px var(--f-body);padding:8px 14px;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.fine{color:var(--muted);font-size:12px;margin:10px 2px}
+
+#bar{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-right,0px)) calc(10px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;align-items:center;justify-content:space-between;gap:12px;box-shadow:0 -6px 20px rgba(0,0,0,.08)}
+#bar .bc{font-family:var(--f-mono);font-size:14px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#bar .bt{font-family:var(--f-mono);font-size:22px;font-weight:600;white-space:nowrap}
+#bar .bt span{font:500 12px var(--f-body);color:var(--muted)}
+
+/* rules tab */
+.ref{display:grid;gap:16px}
+.ref section{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;min-width:0}
+.ref h3{font-family:var(--f-display);font-size:20px;margin:0 0 6px;text-wrap:balance}
+.ref p{margin:6px 0;max-width:68ch}
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+td.c{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
+td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+a{color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.seg button,.chk{transition:background .12s,border-color .12s,color .12s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>IM Visit Coder</h1>
+      <div class="sub">Internal medicine office billing · CMS 2026 work RVUs · Illinois Medicaid</div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button id="tab-calc" role="tab" aria-selected="true" data-tab="calc">Code a visit</button>
+      <button id="tab-rules" role="tab" aria-selected="false" data-tab="rules">Rules</button>
+    </nav>
+  </header>
+
+  <main id="view-calc">
+    <div class="grid">
+      <div class="inputs">
+        <section class="step">
+          <h2><span class="n">1</span>Patient &amp; payer</h2>
+          <div class="field"><div class="label">Patient</div>
+            <div class="seg" data-key="pt"><button data-val="new">New<small>no visit in 3 yrs</small></button><button data-val="est">Established</button></div></div>
+          <div class="field"><div class="label">Insurance</div>
+            <div class="seg" data-key="payer"><button data-val="medicare">Medicare</button><button data-val="medicaid">IL Medicaid</button><button data-val="private">Private</button></div></div>
+          <div class="field" id="f-mplan"><div class="label">Medicaid plan</div>
+            <div class="seg" data-key="mplan"><button data-val="mco">Managed care<small>Meridian, Aetna, BCBS, CountyCare, Molina</small></button><button data-val="ffs">HFS fee-for-service</button></div></div>
+        </section>
+
+        <section class="step">
+          <h2><span class="n">2</span>Visit type</h2>
+          <div class="seg" data-key="visit"><button data-val="annual">Annual physical</button><button data-val="fu">Follow-up / problem visit</button></div>
+          <div id="annual-box" class="row2">
+            <div class="field" id="f-awv"><div class="label">Medicare annual visit</div>
+              <div class="seg" data-key="awv"><button data-val="ippe">IPPE<small>1st yr of Part B</small></button><button data-val="init">First AWV</button><button data-val="sub">Repeat AWV</button></div></div>
+            <div class="field" id="f-age"><div class="label">Age</div>
+              <div class="seg" data-key="age"><button data-val="18">18–39</button><button data-val="40">40–64</button><button data-val="65">65+</button></div></div>
+            <div class="field"><div class="label">Also managed a real problem? <span class="hint">(adds a -25 visit)</span></div>
+              <div class="seg" data-key="aprob"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
+            <div class="field" id="f-addons"><div class="label">AWV add-ons</div>
+              <div class="chks"><button class="chk" data-flag="acp">Advance care planning, 16+ min (99497)</button><button class="chk" data-flag="dep">Depression screen (G0444)</button></div></div>
+          </div>
+        </section>
+
+        <section class="step" id="prob-box">
+          <h2><span class="n">3</span>Problems addressed</h2>
+          <div class="field"><div class="label">Acute complaints</div>
+            <div class="seg" data-key="acute">
+              <button data-val="none">None</button>
+              <button data-val="minor">1 minor<small>self-limited</small></button>
+              <button data-val="simple">1 simple<small>uncomplicated</small></button>
+              <button data-val="comp">1 complicated<small>systemic sx</small></button>
+              <button data-val="msimple">2+ all simple</button>
+              <button data-val="mcomp">2+ any complicated</button>
+            </div></div>
+          <div class="field"><div class="label">Chronic problems</div>
+            <div class="seg" data-key="chronic">
+              <button data-val="none">None</button>
+              <button data-val="s1">1 stable</button>
+              <button data-val="w1">1 worsening<small>or tx side effects</small></button>
+              <button data-val="s2">2+ all stable</button>
+              <button data-val="w2">2+ any worsening</button>
+            </div></div>
+          <div class="chks">
+            <button class="chk" data-flag="undx">New undiagnosed problem, uncertain prognosis</button>
+            <button class="chk" data-flag="severe">Severe exacerbation, or threat to life / bodily function</button>
+          </div>
+        </section>
+
+        <section class="step" id="data-box">
+          <h2><span class="n">4</span>Data</h2>
+          <div class="field"><div class="label">Unique tests ordered + results reviewed + outside notes reviewed</div>
+            <div class="hint">Count each unique test once. A test you order today is not counted again when you review it next visit.</div>
+            <div class="stepper"><button data-step="items" data-d="-1" aria-label="Fewer">−</button><output id="items-out">0</output><button data-step="items" data-d="1" aria-label="More">+</button></div></div>
+          <div class="chks">
+            <button class="chk" data-flag="historian">Independent historian (family, caregiver)</button>
+            <button class="chk" data-flag="interp">I interpreted a test myself, not billed separately (ECG, imaging)</button>
+            <button class="chk" data-flag="discuss">Discussed management with an outside physician / QHP</button>
+          </div>
+        </section>
+
+        <section class="step" id="risk-box">
+          <h2><span class="n">5</span>Risk of management</h2>
+          <div class="seg" data-key="risk">
+            <button data-val="min">Minimal<small>rest, fluids</small></button>
+            <button data-val="low">Low<small>OTC drugs</small></button>
+            <button data-val="mod">Moderate<small>Rx drug management, SDOH limits care</small></button>
+            <button data-val="high">High<small>toxicity monitoring, admit / escalate, DNR</small></button>
+          </div>
+        </section>
+
+        <section class="step" id="time-box">
+          <h2><span class="n">6</span>Time &amp; continuity</h2>
+          <div class="field"><div class="label" id="time-label">Your total minutes today</div>
+            <div class="hint" id="time-hint">Everything you did on this date: chart prep, visit, orders, notes, coordination. Not staff time.</div>
+            <div class="stepper"><button data-tstep="-5" aria-label="5 minutes less">−5</button><input id="minutes" type="number" inputmode="numeric" min="0" max="300" value="0" aria-labelledby="time-label"><button data-tstep="5" aria-label="5 minutes more">+5</button></div></div>
+          <div class="field"><div class="label">Ongoing longitudinal care or serious/complex condition? <span class="hint">(G2211)</span></div>
+            <div class="seg" data-key="g2211"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
+        </section>
+      </div>
+
+      <aside class="result-col" id="result-anchor">
+        <div class="bill" id="result" aria-live="polite"></div>
+        <p class="fine">Reference tool, not compliance advice. Bill only what your note supports. Payer rules change; recheck yearly.</p>
+      </aside>
+    </div>
+  </main>
+
+  <main id="view-rules" hidden>
+    <div class="ref">
+      <section>
+        <h3>Office visits: wRVU and minimum time</h3>
+        <p>Bill the higher of MDM or total time. MDM needs 2 of 3: problems, data, risk.</p>
+        <div class="tw"><table>
+          <tr><th>MDM</th><th>New</th><th>wRVU</th><th>Time</th><th>Est.</th><th>wRVU</th><th>Time</th></tr>
+          <tr><td>Straightforward</td><td class="c">99202</td><td class="n">0.93</td><td class="n">15</td><td class="c">99212</td><td class="n">0.70</td><td class="n">10</td></tr>
+          <tr><td>Low</td><td class="c">99203</td><td class="n">1.60</td><td class="n">30</td><td class="c">99213</td><td class="n">1.30</td><td class="n">20</td></tr>
+          <tr><td>Moderate</td><td class="c">99204</td><td class="n">2.60</td><td class="n">45</td><td class="c">99214</td><td class="n">1.92</td><td class="n">30</td></tr>
+          <tr><td>High</td><td class="c">99205</td><td class="n">3.50</td><td class="n">60</td><td class="c">99215</td><td class="n">2.80</td><td class="n">40</td></tr>
+        </table></div>
+      </section>
+      <section>
+        <h3>MDM elements</h3>
+        <div class="tw"><table>
+          <tr><th>Level</th><th>Problems</th><th>Data</th><th>Risk</th></tr>
+          <tr><td>Low</td><td>1 stable chronic; 1 acute uncomplicated; 2+ minor</td><td>2 of: test ordered, result reviewed, outside note; or independent historian</td><td>OTC drugs</td></tr>
+          <tr><td>Moderate</td><td>1 chronic worsening; 2+ stable chronic; undiagnosed new problem; acute with systemic symptoms</td><td>1 of: 3 items above (historian counts); own test interpretation; outside discussion</td><td>Prescription drug management; SDOH limits care</td></tr>
+          <tr><td>High</td><td>Severe exacerbation; threat to life or bodily function</td><td>2 of the 3 moderate categories</td><td>Intensive toxicity monitoring; hospitalization; DNR / de-escalation</td></tr>
+        </table></div>
+      </section>
+      <section>
+        <h3>Annual visits</h3>
+        <div class="tw"><table>
+          <tr><th>Payer</th><th>Code</th><th>When</th><th>wRVU</th></tr>
+          <tr><td>Medicaid / Private</td><td class="c">99385 / 99395</td><td>18–39, new / est.</td><td class="n">1.92 / 1.75</td></tr>
+          <tr><td>Medicaid / Private</td><td class="c">99386 / 99396</td><td>40–64, new / est.</td><td class="n">2.33 / 1.90</td></tr>
+          <tr><td>Medicaid / Private</td><td class="c">99387 / 99397</td><td>65+, new / est.</td><td class="n">2.50 / 2.00</td></tr>
+          <tr><td>Medicare</td><td class="c">G0402</td><td>IPPE, first 12 months of Part B</td><td class="n">2.60</td></tr>
+          <tr><td>Medicare</td><td class="c">G0438</td><td>First AWV</td><td class="n">2.60</td></tr>
+          <tr><td>Medicare</td><td class="c">G0439</td><td>Repeat AWV, yearly</td><td class="n">1.92</td></tr>
+        </table></div>
+        <p>Medicare does not cover routine physicals (99381–99397). Some Medicare Advantage plans do; check the plan.</p>
+      </section>
+      <section>
+        <h3>Add-ons by payer</h3>
+        <div class="tw"><table>
+          <tr><th>Rule</th><th>Medicare</th><th>IL Medicaid</th><th>Private</th></tr>
+          <tr><td>Annual + problem (-25)</td><td>Paid</td><td>HFS FFS: one code only. MCOs vary (Aetna pays; Centene plans ~50%)</td><td>Usually paid; some cut to 50%</td></tr>
+          <tr><td>G2211 (+0.33)</td><td>Paid; OK on -25 with AWV/IPPE since 2025</td><td>Denied (Meridian notice 2026)</td><td>Varies; Ambetter IL stopped Apr 2026</td></tr>
+          <tr><td>Prolonged (+0.61 / 15 min)</td><td>G2212: 99215 at 69 min, 99205 at 89</td><td>99417: 55 / 75 min (verify)</td><td>99417: 55 / 75 min</td></tr>
+          <tr><td>AWV extras</td><td>99497-33 ACP (1.50); G0444 depression screen with repeat AWV (0.18)</td><td>–</td><td>–</td></tr>
+        </table></div>
+      </section>
+      <section>
+        <h3>Put this app on your home screen</h3>
+        <p>On your Android phone, open this page in Chrome, tap the ⋮ menu, then <b>Add to Home screen</b>. It opens like an app. It needs an internet connection.</p>
+        <p>Sources: CMS 2026 Physician Fee Schedule relative value file; AMA CPT E/M guidelines; CMS CR 13705 (G2211 with modifier 25); Illinois HFS, Meridian, Aetna Better Health IL and Ambetter IL payer notices.</p>
+      </section>
+    </div>
+  </main>
+</div>
+
+<div id="bar" role="button" tabindex="0" aria-label="Jump to result"><div class="bc" id="bar-codes"></div><div class="bt" id="bar-total"></div></div>
+
+<script>
+(function(){
+const W={"99202":.93,"99203":1.6,"99204":2.6,"99205":3.5,"99212":.7,"99213":1.3,"99214":1.92,"99215":2.8,
+ "99385":1.92,"99386":2.33,"99387":2.5,"99395":1.75,"99396":1.9,"99397":2.0,"G0402":2.6,"G0438":2.6,"G0439":1.92,
+ "G2211":.33,"G2212":.61,"99417":.61,"99497":1.5,"G0444":.18};
+const D={"99202":"New patient, straightforward MDM","99203":"New patient, low MDM","99204":"New patient, moderate MDM","99205":"New patient, high MDM",
+ "99212":"Established, straightforward MDM","99213":"Established, low MDM","99214":"Established, moderate MDM","99215":"Established, high MDM",
+ "99385":"Preventive, new, 18–39","99386":"Preventive, new, 40–64","99387":"Preventive, new, 65+","99395":"Preventive, est., 18–39","99396":"Preventive, est., 40–64","99397":"Preventive, est., 65+",
+ "G0402":"IPPE (Welcome to Medicare)","G0438":"Annual wellness visit, first","G0439":"Annual wellness visit, repeat",
+ "G2211":"Visit complexity add-on","G2212":"Prolonged visit (Medicare), per 15 min","99417":"Prolonged visit, per 15 min","99497":"Advance care planning, first 30 min","G0444":"Annual depression screen"};
+const LV=["—","Straightforward","Low","Moderate","High"];
+const EXAMPLE={pt:"est",payer:"medicare",mplan:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",acute:"none",chronic:"w2",
+ undx:false,severe:false,items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false};
+const BLANK=Object.assign({},EXAMPLE,{chronic:"none",items:0,risk:"min",minutes:0});
+let S=Object.assign({},EXAMPLE);
+const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
+const f2=n=>n.toFixed(2);
+
+function probLevel(){
+  const a={none:0,minor:1,simple:2,comp:3,msimple:2,mcomp:3}[S.acute];
+  const c={none:0,s1:2,w1:3,s2:3,w2:3}[S.chronic];
+  let p=Math.max(a,c); if(S.undx)p=Math.max(p,3); if(S.severe)p=4; return p;
+}
+function dataLevel(){
+  const cat1=S.items+(S.historian?1:0); let d=1;
+  if(S.items>=2||S.historian)d=2;
+  const n=(cat1>=3?1:0)+(S.interp?1:0)+(S.discuss?1:0);
+  if(n>=1)d=3; if(n>=2)d=4; return d;
+}
+const riskLevel=()=>({min:1,low:2,mod:3,high:4}[S.risk]);
+const emCode=(pt,l)=>(pt==="new"?{1:"99202",2:"99203",3:"99204",4:"99205"}:{1:"99212",2:"99213",3:"99214",4:"99215"})[l];
+const TT={new:[15,30,45,60],est:[10,20,30,40]};
+function timeLevel(pt,m){const t=TT[pt];let l=0;t.forEach((min,i)=>{if(m>=min)l=i+1});return l;}
+function prolonged(pt,m,payer){
+  const mc=payer==="medicare", start=mc?(pt==="new"?89:69):(pt==="new"?75:55);
+  const units=m>=start?1+Math.floor((m-start)/15):0;
+  return {code:mc?"G2212":"99417",start,units,next:units?start+units*15:start};
+}
+
+/* Problem-oriented E/M: compare MDM vs time */
+function problemVisit(pt,payer,m){
+  const p=probLevel()||1, d=dataLevel(), r=riskLevel();
+  const mdmL=[p,d,r].sort((x,y)=>x-y)[1];
+  const mdm={level:mdmL,code:emCode(pt,mdmL)}; mdm.base=W[mdm.code];
+  let time=null;
+  const tl=timeLevel(pt,m);
+  if(tl){
+    time={level:tl,code:emCode(pt,tl),pro:{units:0}};
+    if(tl===4)time.pro=prolonged(pt,m,payer);
+    time.base=W[time.code]+(time.pro.units||0)*W[time.pro.code||"G2212"];
+  }
+  const best=(time&&time.base>mdm.base+1e-9)?"time":"mdm";
+  return {p,d,r,mdm,time,best};
+}
+
+function compute(){
+  const out={lines:[],notes:[],pv:null,total:0};
+  const add=(code,mod,w,desc,units)=>out.lines.push({code,mod:mod||"",w:(w===undefined?W[code]:w),desc:desc||D[code],units:units||1});
+  const mc=S.payer==="medicare", md=S.payer==="medicaid", pr=S.payer==="private";
+  const annual=S.visit==="annual";
+  const hasProb=!annual||S.aprob==="yes";
+  const noProblems=probLevel()===0;
+
+  // preventive
+  let prev=null;
+  if(annual){
+    if(mc){prev={ippe:"G0402",init:"G0438",sub:"G0439"}[S.awv];}
+    else{prev=(S.pt==="new"?{18:"99385",40:"99386",65:"99387"}:{18:"99395",40:"99396",65:"99397"})[S.age];}
+    if(mc)out.notes.push({t:"info",m:"Medicare does not pay routine physicals (99381–99397), so the annual visit is billed as "+(S.awv==="ippe"?"the IPPE.":"an AWV.")+" Some Medicare Advantage plans pay 99387/99397; check the plan."});
+  }
+
+  // problem E/M
+  let pv=null, emPt=S.pt;
+  if(hasProb && !noProblems){
+    if(annual && !mc && S.pt==="new"){emPt="est";out.notes.push({t:"info",m:"Most payers allow one new-patient code per day, so the -25 problem visit uses the established code."});}
+    pv=problemVisit(emPt,S.payer,S.minutes); out.pv=pv;
+  }
+  const g2211Wanted=S.g2211==="yes" && pv;
+  const g2211Pays=g2211Wanted && !md;
+
+  if(annual){
+    const ffsSingle=md && S.mplan==="ffs" && pv;
+    if(ffsSingle){
+      const emTotal=pv.best==="time"?pv.time.base:pv.mdm.base;
+      if(emTotal>W[prev]){pushEM(pv,"",add);}else{add(prev);}
+      out.notes.push({t:"warn",m:"Illinois HFS fee-for-service does not pay a preventive code and a problem visit in the same session. Bill the single code that best fits the visit; the higher-wRVU one is shown."});
+    }else{
+      add(prev);
+      if(mc&&S.acp)add("99497",(S.awv==="ippe"?"":"33"));
+      if(mc&&S.dep&&S.awv==="sub")add("G0444");
+      if(pv){pushEM(pv,"25",add);
+        if(mc)out.notes.push({t:"info",m:"Tell the patient the -25 problem visit may carry a copay or deductible, unlike the AWV."});
+        if(md)out.notes.push({t:"warn",m:"Managed care plans differ: Aetna Better Health IL pays the -25 visit; Centene plans (e.g. Meridian) may pay about 50% of it."});
+        if(pr)out.notes.push({t:"warn",m:"Some private plans cut the -25 problem visit to 50% and the patient may owe a copay."});
+      }
+    }
+    if(mc&&S.acp&&S.awv==="ippe")out.notes.push({t:"info",m:"Modifier 33 (no cost share) applies to ACP only with an AWV, not the IPPE."});
+  }else if(pv){
+    pushEM(pv,"",add);
+  }
+  if(g2211Pays && !(md&&S.mplan==="ffs"&&annual)){
+    add("G2211");
+    if(annual&&mc)out.notes.push({t:"info",m:"G2211 on a -25 visit is payable because it is billed with an AWV/IPPE (Medicare rule since 2025)."});
+    if(pr)out.notes.push({t:"warn",m:"Many private plans don't pay G2211 (Ambetter IL stopped in April 2026). Confirm with the payer."});
+  }
+  if(g2211Wanted && md)out.notes.push({t:"warn",m:"G2211 left off: Illinois Medicaid plans deny it (e.g. Meridian, 2026)."});
+  if(pv&&pv.time&&pv.time.pro.units&&md)out.notes.push({t:"warn",m:"Confirm your Medicaid plan pays prolonged time (99417)."});
+
+  // level-up hints
+  if(pv){
+    const tl=pv.time?pv.time.level:0;
+    if(tl<4){const need=TT[emPt][tl]; out.notes.push({t:"up",m:"By time, "+emCode(emPt,tl+1)+" needs "+need+" min"+(annual?" on the problem":"")+(S.minutes?" ("+(need-S.minutes)+" more).":".")});}
+    else{const pro=prolonged(emPt,S.minutes,S.payer);out.notes.push({t:"up",m:"Next prolonged unit ("+pro.code+") at "+pro.next+" min."});}
+  }
+  if(hasProb&&noProblems)out.notes.unshift({t:"warn",m:"Pick at least one problem in step 3 to level the "+(annual?"-25 ":"")+"visit."});
+  if(annual && hasProb && S.aprob==="yes")out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
+
+  out.total=out.lines.reduce((s,l)=>s+l.w*l.units,0);
+  return out;
+}
+function pushEM(pv,mod,add){
+  if(pv.best==="time"){
+    add(pv.time.code,mod);
+    if(pv.time.pro.units)add(pv.time.pro.code,"",W[pv.time.pro.code],D[pv.time.pro.code],pv.time.pro.units);
+  }else add(pv.mdm.code,mod);
+}
+
+function render(){
+  // controls
+  $$(".seg").forEach(g=>{const k=g.dataset.key;g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.val===S[k])))});
+  $$("[data-flag]").forEach(b=>b.setAttribute("aria-pressed",String(!!S[b.dataset.flag])));
+  $("#items-out").textContent=S.items;
+  const mi=$("#minutes"); if(document.activeElement!==mi)mi.value=S.minutes||"";
+  const annual=S.visit==="annual", mc=S.payer==="medicare";
+  const hasProb=!annual||S.aprob==="yes";
+  $("#f-mplan").hidden=S.payer!=="medicaid";
+  $("#annual-box").hidden=!annual;
+  $("#f-awv").hidden=!mc; $("#f-age").hidden=mc; $("#f-addons").hidden=!mc;
+  const dep=$('[data-flag="dep"]'); dep.disabled=S.awv!=="sub"; dep.textContent=S.awv==="sub"?"Depression screen (G0444)":"Depression screen (G0444) — repeat AWV only";
+  ["#prob-box","#data-box","#risk-box","#time-box"].forEach(id=>$(id).hidden=!hasProb);
+  $("#time-label").textContent=annual?"Minutes on the problem only":"Your total minutes today";
+  $("#time-hint").textContent=annual?"Count only time spent on the problem, never the preventive portion.":"Everything you did on this date: chart prep, visit, orders, notes, coordination. Not staff time.";
+
+  const o=compute();
+  const codeStr=l=>l.code+(l.mod?"-"+l.mod:"")+(l.units>1?" ×"+l.units:"");
+  let h='<div class="bill-head"><div><div class="eyebrow">Bill these codes</div></div><div class="total">'+f2(o.total)+'<span>wRVU</span></div></div><ul class="codes">';
+  if(!o.lines.length)h+='<li><span class="empty">Nothing to bill yet.</span></li>';
+  o.lines.forEach(l=>{h+='<li><span><span class="code">'+l.code+'</span>'+(l.mod?'<span class="mod">-'+l.mod+'</span>':'')+(l.units>1?'<span class="mod"> ×'+l.units+'</span>':'')+'</span><span class="w">'+f2(l.w*l.units)+'</span><span class="desc">'+l.desc+'</span></li>';});
+  h+='</ul>';
+  const pv=o.pv;
+  if(pv){
+    const t=pv.time;
+    const mdmBest=pv.best==="mdm";
+    h+='<div class="cmp"><div class="'+(mdmBest?"best":"")+'"><span class="k">By MDM'+(mdmBest?'<span class="badge">Best</span>':'')+'</span><span class="v">'+pv.mdm.code+'</span><span class="s">'+LV[pv.mdm.level]+' · '+f2(pv.mdm.base)+' wRVU</span></div>';
+    h+='<div class="'+(!mdmBest?"best":"")+'"><span class="k">By time'+(!mdmBest?'<span class="badge">Best</span>':'')+'</span>';
+    if(t)h+='<span class="v">'+t.code+(t.pro.units?' + '+t.pro.units+'×'+t.pro.code:'')+'</span><span class="s">'+S.minutes+' min · '+f2(t.base)+' wRVU</span>';
+    else h+='<span class="v">—</span><span class="s">Enter minutes in step 6</span>';
+    h+='</div></div>';
+    const met=l=>l>=pv.mdm.level?' met':'';
+    h+='<div class="mdm"><div><span class="k">Problems</span><span class="v'+met(pv.p)+'">'+(probLevel()?LV[pv.p]:"—")+'</span></div><div><span class="k">Data</span><span class="v'+met(pv.d)+'">'+(pv.d===1?"Minimal":pv.d===2?"Limited":pv.d===3?"Moderate":"Extensive")+'</span></div><div><span class="k">Risk</span><span class="v'+met(pv.r)+'">'+LV[pv.r]+'</span></div><div><span class="k">MDM (2 of 3)</span><span class="v">'+LV[pv.mdm.level]+'</span></div></div>';
+  }
+  if(o.notes.length){h+='<ul class="notes">';o.notes.forEach(n=>h+='<li class="'+(n.t==="warn"?"warn":n.t==="up"?"up":"")+'">'+n.m+'</li>');h+='</ul>';}
+  h+='<div class="actions"><button class="btn primary" id="copy">Copy codes</button><button class="btn" id="reset">Reset</button><button class="btn" id="example">Load example</button></div>';
+  $("#result").innerHTML=h;
+  const summary=o.lines.map(codeStr).join(", ");
+  $("#bar-codes").textContent=summary||"No codes yet";
+  $("#bar-total").innerHTML=f2(o.total)+' <span>wRVU</span>';
+  $("#copy").onclick=e=>{const txt=summary+" — "+f2(o.total)+" wRVU";const b=e.currentTarget;
+    const done=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy codes",1500)};
+    try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(_){b.textContent=txt}};
+  $("#reset").onclick=()=>{S=Object.assign({},BLANK,{payer:S.payer,pt:S.pt,mplan:S.mplan});render();};
+  $("#example").onclick=()=>{S=Object.assign({},EXAMPLE);render();};
+}
+
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button"); if(!b)return;
+  const seg=b.closest(".seg");
+  if(seg&&b.dataset.val){S[seg.dataset.key]=b.dataset.val;render();return;}
+  if(b.dataset.flag&&!b.disabled){S[b.dataset.flag]=!S[b.dataset.flag];render();return;}
+  if(b.dataset.step){S.items=Math.max(0,Math.min(9,S.items+Number(b.dataset.d)));render();return;}
+  if(b.dataset.tstep){S.minutes=Math.max(0,Math.min(300,(S.minutes||0)+Number(b.dataset.tstep)));render();return;}
+  if(b.dataset.tab){const r=b.dataset.tab==="rules";$("#view-calc").hidden=r;$("#view-rules").hidden=!r;$("#bar").hidden=r;
+    $$(".tabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));window.scrollTo(0,0);}
+});
+$("#minutes").addEventListener("input",e=>{const v=parseInt(e.target.value,10);S.minutes=isNaN(v)?0:Math.max(0,Math.min(300,v));render();});
+const jump=()=>$("#result-anchor").scrollIntoView({behavior:"smooth",block:"start"});
+$("#bar").addEventListener("click",jump);$("#bar").addEventListener("keydown",e=>{if(e.key==="Enter")jump();});
+render();
+})();
+</script>
