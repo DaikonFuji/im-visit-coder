@@ -79,6 +79,22 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline
 .stepper button{width:44px;height:44px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--ink);font:600 20px var(--f-body);cursor:pointer}
 .stepper output,.stepper input{min-width:64px;text-align:center;font:600 20px var(--f-mono);font-variant-numeric:tabular-nums}
 .stepper input{width:84px;height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+.plist{display:grid}
+.grp{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:10px 0 2px}
+.prow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.grp+.prow{border-top:0}
+.prow .pl{display:grid;gap:2px;min-width:0}
+.prow .pl b{font-weight:600;font-size:14.5px}
+.prow .pl span{color:var(--muted);font-size:12.5px;line-height:1.35}
+.prow.on .pl b{color:var(--accent)}
+.prow.on output{color:var(--accent)}
+.stepper.sm{flex:none;gap:4px}
+.stepper.sm button{width:40px;height:40px;font-size:18px}
+.stepper.sm output{min-width:28px;font-size:18px}
+details.help{font-size:13px}
+details.help summary{cursor:pointer;color:var(--accent);font-weight:600;min-height:32px;display:flex;align-items:center}
+details.help ul{margin:4px 0 0;padding-left:18px;display:grid;gap:6px;color:var(--ink)}
+.why{padding:8px 14px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line)}
 .row2{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
 
 /* superbill */
@@ -183,27 +199,29 @@ a{color:var(--accent)}
 
         <section class="step" id="prob-box">
           <h2><span class="n">3</span>Problems addressed</h2>
-          <div class="field"><div class="label">Acute complaints</div>
-            <div class="seg" data-key="acute">
-              <button data-val="none">None</button>
-              <button data-val="minor">1 minor<small>self-limited</small></button>
-              <button data-val="simple">1 simple<small>uncomplicated</small></button>
-              <button data-val="comp">1 complicated<small>systemic sx</small></button>
-              <button data-val="msimple">2+ all simple</button>
-              <button data-val="mcomp">2+ any complicated</button>
-            </div></div>
-          <div class="field"><div class="label">Chronic problems</div>
-            <div class="seg" data-key="chronic">
-              <button data-val="none">None</button>
-              <button data-val="s1">1 stable</button>
-              <button data-val="w1">1 worsening<small>or tx side effects</small></button>
-              <button data-val="s2">2+ all stable</button>
-              <button data-val="w2">2+ any worsening</button>
-            </div></div>
-          <div class="chks">
-            <button class="chk" data-flag="undx">New undiagnosed problem, uncertain prognosis</button>
-            <button class="chk" data-flag="severe">Severe exacerbation, or threat to life / bodily function</button>
+          <div class="hint">Count every problem you addressed. Mix freely, e.g. 1 simple + 1 complicated, or 1 stable + 1 worsening chronic.</div>
+          <div class="plist">
+            <div class="grp">Acute</div>
+            <div class="prow" data-prow="minor"><div class="pl"><b>Minor / self-limited</b><span>Goes away on its own: cold, insect bite, mild sunburn</span></div><div class="stepper sm"><button data-pstep="minor" data-d="-1" aria-label="Fewer Minor / self-limited">−</button><output data-pout="minor">0</output><button data-pstep="minor" data-d="1" aria-label="More Minor / self-limited">+</button></div></div>
+            <div class="prow" data-prow="simple"><div class="pl"><b>Simple acute</b><span>Uncomplicated, low risk: cystitis, pharyngitis, sinusitis, URI, ankle sprain, otitis media</span></div><div class="stepper sm"><button data-pstep="simple" data-d="-1" aria-label="Fewer Simple acute">−</button><output data-pout="simple">0</output><button data-pstep="simple" data-d="1" aria-label="More Simple acute">+</button></div></div>
+            <div class="prow" data-prow="sacute"><div class="pl"><b>Stable acute</b><span>Already treated, improving but not resolved: pneumonia on day 7 of antibiotics</span></div><div class="stepper sm"><button data-pstep="sacute" data-d="-1" aria-label="Fewer Stable acute">−</button><output data-pout="sacute">0</output><button data-pstep="sacute" data-d="1" aria-label="More Stable acute">+</button></div></div>
+            <div class="prow" data-prow="comp"><div class="pl"><b>Complicated acute</b><span>Systemic symptoms or complicated injury: pyelonephritis, pneumonia, cellulitis with fever, fall with head strike</span></div><div class="stepper sm"><button data-pstep="comp" data-d="-1" aria-label="Fewer Complicated acute">−</button><output data-pout="comp">0</output><button data-pstep="comp" data-d="1" aria-label="More Complicated acute">+</button></div></div>
+            <div class="grp">Chronic</div>
+            <div class="prow" data-prow="cs"><div class="pl"><b>Stable chronic</b><span>At treatment goal: controlled HTN, diabetes at A1c goal, stable hypothyroidism</span></div><div class="stepper sm"><button data-pstep="cs" data-d="-1" aria-label="Fewer Stable chronic">−</button><output data-pout="cs">0</output><button data-pstep="cs" data-d="1" aria-label="More Stable chronic">+</button></div></div>
+            <div class="prow" data-prow="cw"><div class="pl"><b>Worsening chronic</b><span>Not at goal, progressing, or treatment side effects: uncontrolled HTN, A1c rising, statin myalgia</span></div><div class="stepper sm"><button data-pstep="cw" data-d="-1" aria-label="Fewer Worsening chronic">−</button><output data-pout="cw">0</output><button data-pstep="cw" data-d="1" aria-label="More Worsening chronic">+</button></div></div>
+            <div class="prow" data-prow="csev"><div class="pl"><b>Severe exacerbation</b><span>Chronic illness with major worsening, may need hospital: CHF with marked fluid overload</span></div><div class="stepper sm"><button data-pstep="csev" data-d="-1" aria-label="Fewer Severe exacerbation">−</button><output data-pout="csev">0</output><button data-pstep="csev" data-d="1" aria-label="More Severe exacerbation">+</button></div></div>
+            <div class="grp">Other</div>
+            <div class="prow" data-prow="undx"><div class="pl"><b>Undiagnosed new problem</b><span>Uncertain outcome, needs workup: new breast lump, unexplained weight loss</span></div><div class="stepper sm"><button data-pstep="undx" data-d="-1" aria-label="Fewer Undiagnosed new problem">−</button><output data-pout="undx">0</output><button data-pstep="undx" data-d="1" aria-label="More Undiagnosed new problem">+</button></div></div>
+            <div class="prow" data-prow="threat"><div class="pl"><b>Threat to life or bodily function</b><span>Needs urgent action: chest pain concerning for ACS, possible stroke, sepsis</span></div><div class="stepper sm"><button data-pstep="threat" data-d="-1" aria-label="Fewer Threat to life or bodily function">−</button><output data-pout="threat">0</output><button data-pstep="threat" data-d="1" aria-label="More Threat to life or bodily function">+</button></div></div>
           </div>
+          <details class="help"><summary>What counts? (tips for new coders)</summary>
+            <ul>
+              <li>Fever, aches or fatigue alone don't make an illness "complicated" if it's minor and you only treat symptoms. Flu treated with rest and fluids is still simple.</li>
+              <li>Several simple or stable problems don't add up to Moderate. The only exception is 2 or more stable chronic illnesses.</li>
+              <li>Count a problem only if you actually evaluated or managed it today. Listing it in the history doesn't count.</li>
+              <li>A chronic illness is "worsening" when it isn't at its treatment goal, even with no symptoms.</li>
+            </ul>
+          </details>
         </section>
 
         <section class="step" id="data-box">
@@ -314,18 +332,34 @@ const D={"99202":"New patient, straightforward MDM","99203":"New patient, low MD
  "G0402":"IPPE (Welcome to Medicare)","G0438":"Annual wellness visit, first","G0439":"Annual wellness visit, repeat",
  "G2211":"Visit complexity add-on","G2212":"Prolonged visit (Medicare), per 15 min","99417":"Prolonged visit, per 15 min","99497":"Advance care planning, first 30 min","G0444":"Annual depression screen"};
 const LV=["—","Straightforward","Low","Moderate","High"];
-const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",acute:"none",chronic:"w2",
- undx:false,severe:false,items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false};
-const BLANK=Object.assign({},EXAMPLE,{chronic:"none",items:0,risk:"min",minutes:0});
-let S=Object.assign({},EXAMPLE);
+const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",
+ prob:{minor:0,simple:0,sacute:0,comp:0,cs:1,cw:1,csev:0,undx:0,threat:0},items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false};
+const clone=o=>JSON.parse(JSON.stringify(o));
+const BLANK=Object.assign(clone(EXAMPLE),{prob:{minor:0,simple:0,sacute:0,comp:0,cs:0,cw:0,csev:0,undx:0,threat:0},items:0,risk:"min",minutes:0});
+let S=clone(EXAMPLE);
 const $=s=>document.querySelector(s), $$=s=>Array.from(document.querySelectorAll(s));
 const f2=n=>n.toFixed(2);
 
-function probLevel(){
-  const a={none:0,minor:1,simple:2,comp:3,msimple:2,mcomp:3}[S.acute];
-  const c={none:0,s1:2,w1:3,s2:3,w2:3}[S.chronic];
-  let p=Math.max(a,c); if(S.undx)p=Math.max(p,3); if(S.severe)p=4; return p;
+function probInfo(){
+  const P=S.prob, why=[];
+  const n=(c,one,many)=>c+" "+(c>1?many:one);
+  if(P.csev)why.push(n(P.csev,"severe chronic exacerbation","severe chronic exacerbations"));
+  if(P.threat)why.push(n(P.threat,"threat to life or bodily function","threats to life or bodily function"));
+  if(why.length)return {l:4,why};
+  if(P.cw)why.push(n(P.cw,"worsening chronic illness","worsening chronic illnesses"));
+  if(P.cs>=2)why.push(n(P.cs,"stable chronic illness","stable chronic illnesses"));
+  if(P.comp)why.push(n(P.comp,"complicated acute problem","complicated acute problems"));
+  if(P.undx)why.push(n(P.undx,"undiagnosed new problem","undiagnosed new problems"));
+  if(why.length)return {l:3,why};
+  if(P.cs)why.push("1 stable chronic illness");
+  if(P.simple)why.push(n(P.simple,"simple acute problem","simple acute problems"));
+  if(P.sacute)why.push(n(P.sacute,"stable acute illness","stable acute illnesses"));
+  if(P.minor>=2)why.push(P.minor+" minor problems");
+  if(why.length)return {l:2,why};
+  if(P.minor)return {l:1,why:["1 minor problem"]};
+  return {l:0,why:[]};
 }
+const probLevel=()=>probInfo().l;
 function dataLevel(){
   const cat1=S.items+(S.historian?1:0); let d=1;
   if(S.items>=2||S.historian)d=2;
@@ -443,6 +477,7 @@ function render(){
   $$(".seg").forEach(g=>{const k=g.dataset.key;g.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.val===S[k])))});
   $$("[data-flag]").forEach(b=>b.setAttribute("aria-pressed",String(!!S[b.dataset.flag])));
   $("#items-out").textContent=S.items;
+  $$("[data-prow]").forEach(r=>{const k=r.dataset.prow;r.querySelector("output").textContent=S.prob[k];r.classList.toggle("on",S.prob[k]>0);});
   const mi=$("#minutes"); if(document.activeElement!==mi)mi.value=S.minutes||"";
   const mc=S.payer==="medicare", md=S.payer==="medicaid";
   const annual=S.visit==="annual"&&!(md&&S.mannual==="office");
@@ -473,6 +508,7 @@ function render(){
     h+='</div></div>';
     const met=l=>l>=pv.mdm.level?' met':'';
     h+='<div class="mdm"><div><span class="k">Problems</span><span class="v'+met(pv.p)+'">'+(probLevel()?LV[pv.p]:"—")+'</span></div><div><span class="k">Data</span><span class="v'+met(pv.d)+'">'+(pv.d===1?"Minimal":pv.d===2?"Limited":pv.d===3?"Moderate":"Extensive")+'</span></div><div><span class="k">Risk</span><span class="v'+met(pv.r)+'">'+LV[pv.r]+'</span></div><div><span class="k">MDM (2 of 3)</span><span class="v">'+LV[pv.mdm.level]+'</span></div></div>';
+    const pi=probInfo(); if(pi.l)h+='<div class="why">Problems = '+LV[pi.l]+' because of: '+pi.why.join(", ")+'.</div>';
   }
   if(o.notes.length){h+='<ul class="notes">';o.notes.forEach(n=>h+='<li class="'+(n.t==="warn"?"warn":n.t==="up"?"up":"")+'">'+n.m+'</li>');h+='</ul>';}
   h+='<div class="actions"><button class="btn primary" id="copy">Copy codes</button><button class="btn" id="reset">Reset</button><button class="btn" id="example">Load example</button></div>';
@@ -483,8 +519,8 @@ function render(){
   $("#copy").onclick=e=>{const txt=summary+" — "+f2(o.total)+" wRVU";const b=e.currentTarget;
     const done=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy codes",1500)};
     try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(_){b.textContent=txt}};
-  $("#reset").onclick=()=>{S=Object.assign({},BLANK,{payer:S.payer,pt:S.pt,mannual:S.mannual});render();};
-  $("#example").onclick=()=>{S=Object.assign({},EXAMPLE);render();};
+  $("#reset").onclick=()=>{S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,mannual:S.mannual});render();};
+  $("#example").onclick=()=>{S=clone(EXAMPLE);render();};
 }
 
 document.addEventListener("click",e=>{
@@ -492,6 +528,7 @@ document.addEventListener("click",e=>{
   const seg=b.closest(".seg");
   if(seg&&b.dataset.val){S[seg.dataset.key]=b.dataset.val;render();return;}
   if(b.dataset.flag&&!b.disabled){S[b.dataset.flag]=!S[b.dataset.flag];render();return;}
+  if(b.dataset.pstep){const k=b.dataset.pstep;S.prob[k]=Math.max(0,Math.min(9,S.prob[k]+Number(b.dataset.d)));render();return;}
   if(b.dataset.step){S.items=Math.max(0,Math.min(9,S.items+Number(b.dataset.d)));render();return;}
   if(b.dataset.tstep){S.minutes=Math.max(0,Math.min(300,(S.minutes||0)+Number(b.dataset.tstep)));render();return;}
   if(b.dataset.tab){const r=b.dataset.tab==="rules";$("#view-calc").hidden=r;$("#view-rules").hidden=!r;$("#bar").hidden=r;
