@@ -516,7 +516,7 @@ function docStatement(o){
     if(S.discuss)data.push("discussion of management with ***");
     const risk={min:"minimal (rest, fluids, reassurance)",low:"low (over-the-counter medication management)",mod:"moderate (prescription drug management: ***)",high:"high (*** drug therapy requiring intensive monitoring for toxicity / decision regarding hospitalization or escalation of care)"}[S.risk];
     text=(withPrev?"The problem-oriented service was significant and separately identifiable from the preventive visit, requiring additional work beyond the preventive service. ":"")+
-      "Medical decision making is "+LV[pv.mdm.level].toLowerCase()+". Problems ("+LV[pv.p].toLowerCase()+"): "+(probs||"***")+": *** (list each with its status). Data ("+dl.toLowerCase()+"): "+(data.length?data.join("; "):"none")+". Risk: "+risk+".";
+      "Medical decision making is "+LV[pv.mdm.level].toLowerCase()+". Problems ("+LV[pv.p].toLowerCase()+"): "+(probs||"***")+", as noted in the Assessment and Plan. Data ("+dl.toLowerCase()+"): "+(data.length?data.join("; "):"none")+". Risk: "+risk+".";
   }
   if(o.lines.some(l=>l.code==="G2211"))text+=" G2211: I am the continuing focal point for all needed health care services for this patient and/or am providing ongoing longitudinal care for a serious or complex condition (***).";
   return {title,text};
