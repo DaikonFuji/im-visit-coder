@@ -73,6 +73,9 @@ h1{font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:.0
 .chk[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
 .chk[aria-pressed="true"]::before{background:var(--accent);border-color:var(--accent);
   box-shadow:inset 0 0 0 3px var(--surface)}
+.chk.addon b{font-weight:600}
+.chk.addon .ac{font-family:var(--f-mono);font-size:12.5px;color:var(--accent);white-space:nowrap}
+.chk.addon small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
 .chk:disabled{opacity:.45;cursor:not-allowed}
 button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .stepper{display:flex;align-items:center;gap:8px}
@@ -192,8 +195,8 @@ a{color:var(--accent)}
               <div class="seg" data-key="age"><button data-val="18">18–20</button><button data-val="21">21–39</button><button data-val="40">40–64</button><button data-val="65">65+</button></div></div>
             <div class="field"><div class="label">Also managed a real problem? <span class="hint">(adds a -25 visit)</span></div>
               <div class="seg" data-key="aprob"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
-            <div class="field" id="f-addons"><div class="label">AWV add-ons</div>
-              <div class="chks"><button class="chk" data-flag="acp">Advance care planning, 16+ min (99497)</button><button class="chk" data-flag="dep">Depression screen (G0444)</button></div></div>
+            <div class="field" id="f-addons" style="grid-column:1/-1"><div class="label">Preventive add-ons done today <span class="hint">(Medicare; tap all that apply)</span></div>
+              <div class="chks" id="addon-list"></div></div>
           </div>
         </section>
 
@@ -306,7 +309,7 @@ a{color:var(--accent)}
           <tr><td>Annual + problem (-25)</td><td>Paid</td><td>Managed care: usually paid with -25 (some plans 50%). HFS fee-for-service: one code only</td><td>Usually paid; some cut to 50%</td></tr>
           <tr><td>G2211 (+0.33)</td><td>Paid; OK on -25 with AWV/IPPE since 2025</td><td>Not paid; don't bill</td><td>Varies; Ambetter IL stopped Apr 2026</td></tr>
           <tr><td>Prolonged (+0.61 / 15 min)</td><td>G2212: 99215 at 69 min, 99205 at 89</td><td>99417: 55 / 75 min (verify)</td><td>99417: 55 / 75 min</td></tr>
-          <tr><td>AWV extras</td><td>99497-33 ACP (1.50); G0444 depression screen with repeat AWV (0.18)</td><td>–</td><td>–</td></tr>
+          <tr><td>AWV extras</td><td>ACP 99497-33 (1.50) / 99498 (1.40); G0444 depression (0.18); G0442 alcohol screen (0.18), G0443 counseling (0.60); G0537 ASCVD risk (0.18); G0446 CVD counseling (0.60); G0136 activity &amp; nutrition (0.18); 99406/99407 tobacco (0.24/0.50); G0447 obesity (0.60); G0296 lung screening visit (0.52); G0101 (0.44), Q0091 (0.36)</td><td>–</td><td>–</td></tr>
         </table></div>
       </section>
       <section>
@@ -325,12 +328,29 @@ a{color:var(--accent)}
 (function(){
 const W={"99202":.93,"99203":1.6,"99204":2.6,"99205":3.5,"99212":.7,"99213":1.3,"99214":1.92,"99215":2.8,
  "99385":1.92,"99386":2.33,"99387":2.5,"99395":1.75,"99396":1.9,"99397":2.0,"G0402":2.6,"G0438":2.6,"G0439":1.92,
- "G2211":.33,"G2212":.61,"99417":.61,"99497":1.5,"G0444":.18};
+ "G2211":.33,"G2212":.61,"99417":.61,"99497":1.5,"99498":1.4,"G0444":.18,"G0442":.18,"G0443":.6,"G0446":.6,"G0447":.6,"G0537":.18,"G0136":.18,"99406":.24,"99407":.5,"G0296":.52,"G0101":.44,"Q0091":.36};
 const D={"99202":"New patient, straightforward MDM","99203":"New patient, low MDM","99204":"New patient, moderate MDM","99205":"New patient, high MDM",
  "99212":"Established, straightforward MDM","99213":"Established, low MDM","99214":"Established, moderate MDM","99215":"Established, high MDM",
  "99385":"Preventive, new, 18–39","99386":"Preventive, new, 40–64","99387":"Preventive, new, 65+","99395":"Preventive, est., 18–39","99396":"Preventive, est., 40–64","99397":"Preventive, est., 65+",
  "G0402":"IPPE (Welcome to Medicare)","G0438":"Annual wellness visit, first","G0439":"Annual wellness visit, repeat",
- "G2211":"Visit complexity add-on","G2212":"Prolonged visit (Medicare), per 15 min","99417":"Prolonged visit, per 15 min","99497":"Advance care planning, first 30 min","G0444":"Annual depression screen"};
+ "G2211":"Visit complexity add-on","G2212":"Prolonged visit (Medicare), per 15 min","99417":"Prolonged visit, per 15 min","99497":"Advance care planning, first 30 min","99498":"Advance care planning, each extra 30 min","G0444":"Annual depression screen","G0442":"Annual alcohol screen","G0443":"Alcohol counseling, 15 min","G0446":"Cardiovascular behavioral counseling","G0447":"Obesity behavioral counseling","G0537":"ASCVD risk assessment","G0136":"Physical activity & nutrition assessment","99406":"Tobacco counseling, 3–10 min","99407":"Tobacco counseling, over 10 min","G0296":"Lung cancer screening decision visit","G0101":"Screening pelvic and breast exam","Q0091":"Screening Pap collection"};
+const ADDONS=[
+ {k:"acp",code:"99497",m33:1,label:"Advance care planning, 16+ min",hint:"Add -33 with an AWV so the patient has no cost share"},
+ {k:"acp2",code:"99498",m33:1,label:"Advance care planning, each extra 30 min",hint:"46+ minutes total; needs 99497",req:"acp"},
+ {k:"dep",code:"G0444",label:"Depression screen (PHQ)",hint:"Once a year; billed with the repeat AWV",only:"sub"},
+ {k:"alc",code:"G0442",label:"Alcohol screen, 5–15 min",hint:"Once a year, any result (AUDIT-C)"},
+ {k:"alcc",code:"G0443",label:"Alcohol counseling, 15 min",hint:"Positive screen only; up to 4 a year"},
+ {k:"ascvd",code:"G0537",label:"ASCVD risk assessment, 5–15 min",hint:"No heart disease or stroke, 1+ risk factor, lipids in last 12 months, 10-year risk documented"},
+ {k:"cvd",code:"G0446",label:"Cardiovascular behavioral counseling, 15 min",hint:"Once a year: aspirin, blood pressure, diet"},
+ {k:"pan",code:"G0136",m33:1,label:"Physical activity & nutrition assessment, 5–15 min",hint:"Every 6 months; replaced the SDOH assessment in 2026"},
+ {k:"tob1",code:"99406",label:"Tobacco counseling, 3–10 min",hint:"Current tobacco user",excl:"tob2"},
+ {k:"tob2",code:"99407",label:"Tobacco counseling, over 10 min",hint:"Current tobacco user",excl:"tob1"},
+ {k:"obes",code:"G0447",label:"Obesity counseling, 15 min",hint:"BMI 30 or higher"},
+ {k:"lung",code:"G0296",label:"Lung cancer screening decision visit",hint:"Before first low-dose CT: age 50–77, 20+ pack-years, smoking now or quit within 15 years"},
+ {k:"pelv",code:"G0101",label:"Screening pelvic and breast exam",hint:"Every 2 years (yearly if high risk)"},
+ {k:"pap",code:"Q0091",label:"Screening Pap collection",hint:"With the pelvic exam when a Pap is due"}
+];
+const addonOK=a=>(!a.only||S.awv===a.only)&&(!a.req||S[a.req]);
 const LV=["—","Straightforward","Low","Moderate","High"];
 const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",
  prob:{minor:0,simple:0,sacute:0,comp:0,cs:1,cw:1,csev:0,undx:0,threat:0},items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false};
@@ -429,8 +449,7 @@ function compute(){
       }else addPrev();
     }else{
       if(mc)add(prev);else addPrev();
-      if(mc&&S.acp)add("99497",(S.awv==="ippe"?"":"33"));
-      if(mc&&S.dep&&S.awv==="sub")add("G0444");
+      if(mc)ADDONS.forEach(a=>{if(S[a.k]&&addonOK(a))add(a.code,(a.m33&&S.awv!=="ippe")?"33":"");});
       if(pv){pushEM(pv,"25",add);
         if(mc)out.notes.push({t:"info",m:"Tell the patient the -25 problem visit may carry a copay or deductible, unlike the AWV."});
         if(pr)out.notes.push({t:"warn",m:"Some private plans cut the -25 problem visit to 50% and the patient may owe a copay."});
@@ -441,7 +460,8 @@ function compute(){
       out.notes.push({t:"info",m:"HFS allows one adult preventive visit per year (333 days); a second is allowed with a new PCP or for a female annual exam. No cost share for the preventive visit."});
       if(S.age==="18")out.notes.push({t:"info",m:"Age 18–20 is Healthy Kids (EPSDT) in Illinois; same codes. HFS does not require the EP modifier; add it only if your plan asks."});
     }
-    if(mc&&S.acp&&S.awv==="ippe")out.notes.push({t:"info",m:"Modifier 33 (no cost share) applies to ACP only with an AWV, not the IPPE."});
+    if(mc&&S.awv==="ippe"&&(S.acp||S.pan))out.notes.push({t:"info",m:"Modifier 33 (no cost share) applies to ACP and G0136 only with an AWV, not the IPPE."});
+    if(mc&&["alcc","cvd","tob1","tob2","obes","acp","alc","ascvd","pan"].some(k=>S[k]))out.notes.push({t:"info",m:"Document the minutes for each add-on. Time counted for one service can't be counted again for another or for the AWV."});
   }else if(pv){
     pushEM(pv,"",add);
   }
@@ -486,7 +506,7 @@ function render(){
   $("#f-g2211").hidden=md;
   $("#annual-box").hidden=!annual;
   $("#f-awv").hidden=!mc; $("#f-age").hidden=mc; $("#f-addons").hidden=!mc;
-  const dep=$('[data-flag="dep"]'); dep.disabled=S.awv!=="sub"; dep.textContent=S.awv==="sub"?"Depression screen (G0444)":"Depression screen (G0444) — repeat AWV only";
+  ADDONS.forEach(a=>{const b=$('[data-flag="'+a.k+'"]');const ok=addonOK(a);b.disabled=!ok;if(!ok)b.setAttribute("aria-pressed","false");});
   ["#prob-box","#data-box","#risk-box","#time-box"].forEach(id=>$(id).hidden=!hasProb);
   $("#time-label").textContent=annual?"Minutes on the problem only":"Your total minutes today";
   $("#time-hint").textContent=annual?"Count only time spent on the problem, never the preventive portion.":"Everything you did on this date: chart prep, visit, orders, notes, coordination. Not staff time.";
@@ -527,13 +547,14 @@ document.addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b)return;
   const seg=b.closest(".seg");
   if(seg&&b.dataset.val){S[seg.dataset.key]=b.dataset.val;render();return;}
-  if(b.dataset.flag&&!b.disabled){S[b.dataset.flag]=!S[b.dataset.flag];render();return;}
+  if(b.dataset.flag&&!b.disabled){const k=b.dataset.flag;S[k]=!S[k];const a=ADDONS.find(x=>x.k===k);if(a&&a.excl&&S[k])S[a.excl]=false;if(k==="acp"&&!S.acp)S.acp2=false;render();return;}
   if(b.dataset.pstep){const k=b.dataset.pstep;S.prob[k]=Math.max(0,Math.min(9,S.prob[k]+Number(b.dataset.d)));render();return;}
   if(b.dataset.step){S.items=Math.max(0,Math.min(9,S.items+Number(b.dataset.d)));render();return;}
   if(b.dataset.tstep){S.minutes=Math.max(0,Math.min(300,(S.minutes||0)+Number(b.dataset.tstep)));render();return;}
   if(b.dataset.tab){const r=b.dataset.tab==="rules";$("#view-calc").hidden=r;$("#view-rules").hidden=!r;$("#bar").hidden=r;
     $$(".tabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));window.scrollTo(0,0);}
 });
+$("#addon-list").innerHTML=ADDONS.map(a=>'<button class="chk addon" data-flag="'+a.k+'"><span><b>'+a.label+'</b> <span class="ac">'+a.code+' · '+W[a.code].toFixed(2)+'</span><small>'+a.hint+'</small></span></button>').join("");
 $("#minutes").addEventListener("input",e=>{const v=parseInt(e.target.value,10);S.minutes=isNaN(v)?0:Math.max(0,Math.min(300,v));render();});
 const jump=()=>$("#result-anchor").scrollIntoView({behavior:"smooth",block:"start"});
 $("#bar").addEventListener("click",jump);$("#bar").addEventListener("keydown",e=>{if(e.key==="Enter")jump();});
