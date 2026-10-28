@@ -232,6 +232,10 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
 
         <section class="step">
           <h2><span class="n">2</span>Visit type</h2>
+          <div class="field"><div class="label">How was the visit done?</div>
+            <div class="seg" data-key="setting"><button data-val="office">In person</button><button data-val="video">Video<small>real-time audio + video</small></button><button data-val="audio">Phone only<small>audio, no video</small></button></div></div>
+          <div class="field" id="f-ptloc"><div class="label">Where was the patient?</div>
+            <div class="seg" data-key="ptLoc"><button data-val="home">At home<small>POS 10</small></button><button data-val="other">Somewhere else<small>POS 02</small></button></div></div>
           <div class="seg" data-key="visit"><button data-val="annual">Annual physical</button><button data-val="fu">Follow-up / problem visit</button><button data-val="tcm">Post-discharge (TCM)</button></div>
           <div class="field" id="f-mplan"><div class="label">How your clinic bills Medicaid annuals</div>
             <div class="seg" data-key="mannual"><button data-val="mco">Managed care plan<small>preventive + -25 visit</small></button><button data-val="ffs">HFS fee-for-service<small>one code per visit</small></button><button data-val="office">Office visit only<small>no preventive code</small></button></div></div>
@@ -542,7 +546,7 @@ const addonOK=a=>(!a.only||S.awv===a.only)&&(!a.req||S[a.req]);
 const LV=["—","Straightforward","Low","Moderate","High"];
 const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",
  prob:{minor:0,simple:0,sacute:0,comp:0,cs:1,cw:1,csev:0,undx:0,threat:0},items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false,
- planMedicaid:"mcounk",planPrivate:"unk",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",
+ planMedicaid:"mcounk",planPrivate:"unk",setting:"office",ptLoc:"home",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",
  evType:"portal",evInit:"yes",evPrior:"no",evLed:"no",evMin:12,cmProg:"ccm",cmWho:"staff",cmComplex:"no",cmMin:25,cmCond:"2",cmQmb:"no",cog:[]};
 const clone=o=>JSON.parse(JSON.stringify(o));
 const BLANK=Object.assign(clone(EXAMPLE),{prob:{minor:0,simple:0,sacute:0,comp:0,cs:0,cw:0,csev:0,undx:0,threat:0},items:0,risk:"min",minutes:0});
@@ -608,7 +612,8 @@ function compute(){
   const mc=S.payer==="medicare", md=S.payer==="medicaid", pr=S.payer==="private";
   const tcm=S.visit==="tcm";
   const plan=curPlan();
-  const procs=PROCS.filter(p=>S[p.k]&&procOK(p));
+  const tele=S.setting!=="office";
+  const procs=tele?[]:PROCS.filter(p=>S[p.k]&&procOK(p));
   const need25=procs.some(p=>p.m25), proc25=procs.some(p=>p.m25&&!p.vax);
   const asOffice=md&&S.visit==="annual"&&S.mannual==="office";
   const annual=S.visit==="annual"&&!asOffice;
@@ -706,10 +711,36 @@ function compute(){
   if(hasProb&&noProblems&&!procs.length)out.notes.unshift({t:"warn",m:"Pick at least one problem in step 3 to level the "+(annual?"-25 ":"")+"visit."});
   if(annual && !(md&&S.mannual==="ffs") && hasProb && S.aprob==="yes")out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
 
+  if(tele){
+    const audio=S.setting==="audio", pos=S.ptLoc==="home"?"10":"02";
+    const tm=audio?"93":md?"GT":pr?"95":"";
+    const inPersonOnly=["G0402","G0101","Q0091"];
+    out.lines=out.lines.filter(l=>{if(inPersonOnly.includes(l.code)){out.notes.unshift({t:"warn",m:l.code+" ("+l.desc.split(" ·")[0]+") requires an in-person visit; removed."});return false;}return true;});
+    if(!out.lines.some(l=>/^(G043[89]|993[89])/.test(l.code)))out.lines.forEach(l=>{if(/^992/.test(l.code)&&l.mod==="25")l.mod="";});
+    out.lines.forEach(l=>{if(tm&&l.code!=="G2211")l.mod=l.mod?l.mod+"-"+tm:tm;});
+    const how=audio?"audio-only":"real-time audio-video";
+    let m="Telehealth ("+how+"): place of service "+pos+" ("+(pos==="10"?"patient at home":"patient not at home")+")";
+    if(mc)m+=audio?", modifier 93 on each line.":". Medicare doesn't require modifier 95 with POS 10/02; add it if your billing team prefers.";
+    else if(md)m+=", modifier "+(audio?"93":"GT")+" on each line (Illinois Medicaid denies telehealth lines without GT or 93).";
+    else m+=", modifier "+tm+" on each line. Some private plans want the newer telemedicine codes (98000–98015) instead; check the plan.";
+    out.notes.unshift({t:"info",m});
+    if(mc)out.notes.push({t:"info",m:"Medicare pays telehealth from the patient's home through Dec 31, 2027, at the same (non-facility) rate as an office visit. G2211 is allowed on telehealth visits."});
+    if(mc&&audio)out.notes.push({t:"warn",m:"Medicare audio-only: allowed only when the patient is at home and can't use or doesn't agree to video, and you could have done video. Document that."});
+    if(pr)out.notes.push({t:"info",m:"Illinois law requires in-network private plans to pay telehealth at the in-person rate (through 2027)."+(audio?" Audio-only coverage varies by plan.":"")});
+    if(annual&&!mc)out.notes.push({t:"warn",m:"Most plans don't pay a preventive visit done by telehealth because it needs a physical exam. Consider billing only the problem visit."});
+    if(annual&&mc)out.notes.push({t:"info",m:"The AWV can be done by telehealth; vitals can be patient-reported. The IPPE (Welcome to Medicare) can't."});
+    if(S.visit==="tcm")out.notes.push({t:"info",m:"TCM can be done by telehealth for Medicare; check other plans."});
+  }
   out.total=out.lines.reduce((s,l)=>s+l.w*l.units,0);
   return out;
 }
 function docStatement(o){
+  const r=docStatement0(o); if(!r||S.setting==="office")return r;
+  const audio=S.setting==="audio";
+  const t="This visit was conducted by "+(audio?"audio-only":"real-time audio-video")+" telehealth with the patient's consent. Patient location: "+(S.ptLoc==="home"?"home":"***")+" (***, state ***). Provider location: ***. Participants: patient"+" and ***."+(audio?" Video was not used because the patient was unable to use, or did not consent to, video; I was capable of audio-video.":"")+" ";
+  return {title:r.title+" · telehealth",text:t+r.text,mdmTip:r.mdmTip};
+}
+function docStatement0(o){
   const pv=o.pv; if(!pv)return null;
   if(o.tcm)return {title:"TCM statement",mdmTip:true,text:"Transitional care management. Patient discharged from *** on ***. Interactive contact with the patient/caregiver was made on *** (within 2 business days of discharge). Face-to-face visit today, within "+(S.tcmDays==="7"?"7":"14")+" days of discharge. Medication reconciliation and management completed on or before today's visit. Medical decision making is "+LV[pv.mdm.level].toLowerCase()+", as documented in the Assessment and Plan. Non-face-to-face services (review of discharge information, follow-up on pending tests and treatments, referrals, and patient/caregiver education) provided as documented."};
   const em=o.lines.find(l=>/^992/.test(l.code)); if(!em)return null;
@@ -758,6 +789,8 @@ function render(){
   $("#f-g2211").hidden=md||(S.payer==="private"&&annual);
   $("#annual-box").hidden=!annual;
   $("#tcm-box").hidden=S.visit!=="tcm";
+  $("#f-ptloc").hidden=S.setting==="office";
+  $("#proc-box").hidden=S.setting!=="office";
   $("#f-plan").hidden=!(md||S.payer==="private");
   if(!$("#f-plan").hidden){const list=PLANS[S.payer],cp=curPlan();const sel=$("#plan");
     const html=list.map(p=>'<option value="'+p.id+'"'+(p.id===cp.id?' selected':'')+'>'+esc(p.name)+'</option>').join("");if(sel.innerHTML!==html)sel.innerHTML=html;sel.value=cp.id;
@@ -804,7 +837,7 @@ function render(){
   $("#save").onclick=()=>{if(!o.lines.length){toast("Nothing to save yet");return;}
     const vt={annual:"Annual",fu:"Follow-up",tcm:"Post-discharge"}[S.visit], py={medicare:"Medicare",medicaid:"IL Medicaid",private:"Private"}[S.payer];
     saveEntry(vt+" · "+py,summary,o.total);};
-  $("#reset").onclick=()=>{S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,mannual:S.mannual,planMedicaid:S.planMedicaid,planPrivate:S.planPrivate});render();};
+  $("#reset").onclick=()=>{S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,setting:S.setting,ptLoc:S.ptLoc,mannual:S.mannual,planMedicaid:S.planMedicaid,planPrivate:S.planPrivate});render();};
   $("#example").onclick=()=>{S=clone(EXAMPLE);render();};
   renderMore(); renderTrack();
 }
