@@ -629,6 +629,8 @@ function compute(){
   if(annual){
     if(mc){prev={ippe:"G0402",init:"G0438",sub:"G0439"}[S.awv];}
     else{prev=(S.pt==="new"?{18:"99385",21:"99385",40:"99386",65:"99387"}:{18:"99395",21:"99395",40:"99396",65:"99397"})[S.age];}
+    if(mc&&S.pt==="new"&&S.awv==="sub")out.notes.push({t:"warn",m:"New to you + repeat AWV (G0439): only if the patient had an AWV elsewhere more than 12 months ago. If she has never had one, bill the first AWV (G0438, 2.60 wRVU)."});
+    if(mc&&S.pt==="new"&&S.aprob==="yes"&&S.atcm!=="yes")out.notes.push({t:"warn",m:"Some Epic builds only list established codes (99212–99215) as an extra visit with the AWV. Ask billing how to add a new-patient visit (99202–99205-25) with the AWV."});
     if(mc)out.notes.push({t:"info",m:"Medicare does not pay routine physicals (99381–99397), so the annual visit is billed as "+(S.awv==="ippe"?"the IPPE.":"an AWV.")+" Some Medicare Advantage plans pay 99387/99397; check the plan."});
   }
 
@@ -655,8 +657,9 @@ function compute(){
     if(!ok)out.notes.push({t:"warn",m:"TCM not allowed: it needs "+[S.tcmContact!=="yes"?"contact within 2 business days of discharge":"",S.tcmMed!=="yes"?"medication reconciliation by this visit":"",S.tcmDays==="late"?"a visit within 14 days of discharge":""].filter(Boolean).join(" and ")+". Billed as "+alt+" instead."});
     else if(!tc)out.notes.push({t:"warn",m:"TCM needs at least moderate MDM. Billed as "+alt+" instead."});
     if(tc&&L===4&&S.tcmDays==="14")out.notes.push({t:"up",m:"99496 (3.79) needs high MDM and a visit within 7 days. This visit qualifies for 99495."});
-    if(tc&&W[tc]+1e-9>=emBase){
+    if(tc&&W[tc]+0.25+1e-9>=emBase){
       add(tc); out.tcm=tc; g2211Pays=false;
+      if(emBase>W[tc]+1e-9)out.notes.push({t:"info",m:"TCM chosen even though "+(annual?"an office visit with -25":"a regular office visit")+" is slightly higher ("+f2(emBase)+" vs "+f2(W[tc])+"): TCM covers the whole 30 days after discharge and avoids -25 and G2211 denials."});
       out.notes.push({t:"info",m:"Bill TCM once per 30 days after discharge, dated today. It is today's office visit, so don't also bill 99212–99215"+(annual?"; all problems managed today count toward the TCM MDM. TCM doesn't take modifier 25. Document the AWV and the TCM visit separately.":".")+" Check that the patient's plan pays TCM."});
     }else{
       pushEM(pv,emMod,add);
