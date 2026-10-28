@@ -252,7 +252,9 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
               <div class="seg" data-key="awv"><button data-val="ippe">IPPE<small>1st yr of Part B</small></button><button data-val="init">First AWV</button><button data-val="sub">Repeat AWV</button></div></div>
             <div class="field" id="f-age"><div class="label">Age</div>
               <div class="seg" data-key="age"><button data-val="18">18–20</button><button data-val="21">21–39</button><button data-val="40">40–64</button><button data-val="65">65+</button></div></div>
-            <div class="field"><div class="label">Also managed a real problem? <span class="hint">(adds a -25 visit)</span></div>
+            <div class="field" id="f-atcm"><div class="label">Also a post-discharge (TCM) visit? <span class="hint">(Medicare)</span></div>
+              <div class="seg" data-key="atcm"><button data-val="no">No</button><button data-val="yes">Yes</button></div></div>
+            <div class="field" id="f-aprob"><div class="label">Also managed a real problem? <span class="hint">(adds a -25 visit)</span></div>
               <div class="seg" data-key="aprob"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
             <div class="field" id="f-addons" style="grid-column:1/-1"><div class="label">Preventive add-ons done today <span class="hint">(Medicare; tap all that apply)</span></div>
               <div class="chks" id="addon-list"></div></div>
@@ -546,7 +548,7 @@ const addonOK=a=>(!a.only||S.awv===a.only)&&(!a.req||S[a.req]);
 const LV=["—","Straightforward","Low","Moderate","High"];
 const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",
  prob:{minor:0,simple:0,sacute:0,comp:0,cs:1,cw:1,csev:0,undx:0,threat:0},items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false,
- planMedicaid:"mcounk",planPrivate:"unk",setting:"office",ptLoc:"home",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",
+ planMedicaid:"mcounk",planPrivate:"unk",setting:"office",ptLoc:"home",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",atcm:"no",
  evType:"portal",evInit:"yes",evPrior:"no",evLed:"no",evMin:12,cmProg:"ccm",cmWho:"staff",cmComplex:"no",cmMin:25,cmCond:"2",cmQmb:"no",cog:[]};
 const clone=o=>JSON.parse(JSON.stringify(o));
 const BLANK=Object.assign(clone(EXAMPLE),{prob:{minor:0,simple:0,sacute:0,comp:0,cs:0,cw:0,csev:0,undx:0,threat:0},items:0,risk:"min",minutes:0});
@@ -617,7 +619,8 @@ function compute(){
   const need25=procs.some(p=>p.m25), proc25=procs.some(p=>p.m25&&!p.vax);
   const asOffice=md&&S.visit==="annual"&&S.mannual==="office";
   const annual=S.visit==="annual"&&!asOffice;
-  const hasProb=!annual||S.aprob==="yes";
+  const awvTcm=annual&&mc&&S.atcm==="yes";
+  const hasProb=!annual||S.aprob==="yes"||awvTcm;
   const noProblems=probLevel()===0;
   if(asOffice)out.notes.push({t:"info",m:"Illinois Medicaid, your clinic's rule: no annual code. The visit is billed as a "+(S.pt==="new"?"new":"follow-up")+" office visit, leveled on the problems you addressed."});
 
@@ -643,6 +646,23 @@ function compute(){
   if(g2211Pays&&pr&&plan&&plan.g2211==="no"){g2211Pays=false;out.notes.push({t:"info",m:"No G2211: "+plan.name+" doesn't pay it."});}
   if(prAnnual&&pv)out.notes.push({t:"info",m:"No G2211: it never attaches to a preventive code, and Medicare's exception for -25 visits with a wellness visit doesn't apply to private plans. Bill G2211 to private plans on follow-up visits only."});
 
+  const tryTCM=(emMod)=>{
+    const L=pv.mdm.level, ok=S.tcmContact==="yes"&&S.tcmMed==="yes"&&S.tcmDays!=="late";
+    let tc=null;
+    if(ok){if(L===4&&S.tcmDays==="7")tc="99496";else if(L>=3)tc="99495";}
+    const emBase=(pv.best==="time"?pv.time.base:pv.mdm.base)+(g2211Pays?W.G2211:0);
+    const alt=annual?"an office visit with -25":"a regular office visit";
+    if(!ok)out.notes.push({t:"warn",m:"TCM not allowed: it needs "+[S.tcmContact!=="yes"?"contact within 2 business days of discharge":"",S.tcmMed!=="yes"?"medication reconciliation by this visit":"",S.tcmDays==="late"?"a visit within 14 days of discharge":""].filter(Boolean).join(" and ")+". Billed as "+alt+" instead."});
+    else if(!tc)out.notes.push({t:"warn",m:"TCM needs at least moderate MDM. Billed as "+alt+" instead."});
+    if(tc&&L===4&&S.tcmDays==="14")out.notes.push({t:"up",m:"99496 (3.79) needs high MDM and a visit within 7 days. This visit qualifies for 99495."});
+    if(tc&&W[tc]+1e-9>=emBase){
+      add(tc); out.tcm=tc; g2211Pays=false;
+      out.notes.push({t:"info",m:"Bill TCM once per 30 days after discharge, dated today. It is today's office visit, so don't also bill 99212–99215"+(annual?"; all problems managed today count toward the TCM MDM. TCM doesn't take modifier 25. Document the AWV and the TCM visit separately.":".")+" Check that the patient's plan pays TCM."});
+    }else{
+      pushEM(pv,emMod,add);
+      if(tc)out.notes.push({t:"up",m:(annual?"An office visit with -25":"A regular office visit")+" earns more here ("+f2(emBase)+" vs "+f2(W[tc])+" for "+tc+"). You can bill one or the other, not both."});
+    }
+  };
   if(annual){
     const addPrev=()=>add(prev,"",undefined,D[prev]+" · Dx Z00.00 (normal) or Z00.01 (abnormal findings)");
     if(md&&S.mannual==="ffs"){
@@ -654,7 +674,9 @@ function compute(){
     }else{
       if(mc)add(prev);else addPrev();
       if(mc)ADDONS.forEach(a=>{if(S[a.k]&&addonOK(a))add(a.code,(a.m33&&S.awv!=="ippe")?"33":"");});
-      if(pv){pushEM(pv,"25",add);
+      if(pv&&awvTcm){tryTCM("25");
+        if(!out.tcm)out.notes.push({t:"info",m:"Tell the patient the -25 problem visit may carry a copay or deductible, unlike the AWV."});
+      }else if(pv){pushEM(pv,"25",add);
         if(mc)out.notes.push({t:"info",m:"Tell the patient the -25 problem visit may carry a copay or deductible, unlike the AWV."});
         if(pr||md){const m=plan?plan.m25:"unk", nm=plan?plan.name:"This plan";
           if(m==="half")out.notes.push({t:"warn",m:nm+" pays the -25 problem visit at about 50%. Your wRVU credit normally still counts in full."});
@@ -669,20 +691,7 @@ function compute(){
     if(mc&&S.awv==="ippe"&&(S.acp||S.pan))out.notes.push({t:"info",m:"Modifier 33 (no cost share) applies to ACP and G0136 only with an AWV, not the IPPE."});
     if(mc&&["alcc","cvd","tob1","tob2","obes","acp","alc","ascvd","pan"].some(k=>S[k]))out.notes.push({t:"info",m:"Document the minutes for each add-on. Time counted for one service can't be counted again for another or for the AWV."});
   }else if(tcm&&pv){
-    const L=pv.mdm.level, ok=S.tcmContact==="yes"&&S.tcmMed==="yes"&&S.tcmDays!=="late";
-    let tc=null;
-    if(ok){if(L===4&&S.tcmDays==="7")tc="99496";else if(L>=3)tc="99495";}
-    const emBase=(pv.best==="time"?pv.time.base:pv.mdm.base)+(g2211Pays?W.G2211:0);
-    if(!ok)out.notes.push({t:"warn",m:"TCM not allowed: it needs "+[S.tcmContact!=="yes"?"contact within 2 business days of discharge":"",S.tcmMed!=="yes"?"medication reconciliation by this visit":"",S.tcmDays==="late"?"a visit within 14 days of discharge":""].filter(Boolean).join(" and ")+". Billed as a regular office visit instead."});
-    else if(!tc)out.notes.push({t:"warn",m:"TCM needs at least moderate MDM. Billed as a regular office visit instead."});
-    if(tc&&L===4&&S.tcmDays==="14")out.notes.push({t:"up",m:"99496 (3.79) needs high MDM and a visit within 7 days. This visit qualifies for 99495."});
-    if(tc&&W[tc]+1e-9>=emBase){
-      add(tc); out.tcm=tc; g2211Pays=false;
-      out.notes.push({t:"info",m:"Bill TCM once per 30 days after discharge, dated today. It covers today's visit, so don't also bill an office visit. Check that the patient's plan pays TCM."});
-    }else{
-      pushEM(pv,need25?"25":"",add);
-      if(tc)out.notes.push({t:"up",m:"A regular office visit earns more here ("+f2(emBase)+" vs "+f2(W[tc])+" for "+tc+"). You can bill one or the other, not both."});
-    }
+    tryTCM(need25?"25":"");
   }else if(pv){
     pushEM(pv,need25?"25":"",add);
   }
@@ -709,7 +718,7 @@ function compute(){
     else{const pro=prolonged(emPt,S.minutes,S.payer);out.notes.push({t:"up",m:"Next prolonged unit ("+pro.code+") at "+pro.next+" min."});}
   }
   if(hasProb&&noProblems&&!procs.length)out.notes.unshift({t:"warn",m:"Pick at least one problem in step 3 to level the "+(annual?"-25 ":"")+"visit."});
-  if(annual && !(md&&S.mannual==="ffs") && hasProb && S.aprob==="yes")out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
+  if(annual && !out.tcm && !(md&&S.mannual==="ffs") && hasProb && (S.aprob==="yes"||awvTcm))out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
 
   if(tele){
     const audio=S.setting==="audio", pos=S.ptLoc==="home"?"10":"02";
@@ -742,7 +751,7 @@ function docStatement(o){
 }
 function docStatement0(o){
   const pv=o.pv; if(!pv)return null;
-  if(o.tcm)return {title:"TCM statement",mdmTip:true,text:"Transitional care management. Patient discharged from *** on ***. Interactive contact with the patient/caregiver was made on *** (within 2 business days of discharge). Face-to-face visit today, within "+(S.tcmDays==="7"?"7":"14")+" days of discharge. Medication reconciliation and management completed on or before today's visit. Medical decision making is "+LV[pv.mdm.level].toLowerCase()+", as documented in the Assessment and Plan. Non-face-to-face services (review of discharge information, follow-up on pending tests and treatments, referrals, and patient/caregiver education) provided as documented."};
+  if(o.tcm)return {title:"TCM statement"+(S.visit==="annual"?" (with AWV)":""),mdmTip:true,text:(S.visit==="annual"?"The annual wellness visit is documented separately. ":"")+"Transitional care management. Patient discharged from *** on ***. Interactive contact with the patient/caregiver was made on *** (within 2 business days of discharge). Face-to-face visit today, within "+(S.tcmDays==="7"?"7":"14")+" days of discharge. Medication reconciliation and management completed on or before today's visit. Medical decision making is "+LV[pv.mdm.level].toLowerCase()+", as documented in the Assessment and Plan. Non-face-to-face services (review of discharge information, follow-up on pending tests and treatments, referrals, and patient/caregiver education) provided as documented."};
   const em=o.lines.find(l=>/^992/.test(l.code)); if(!em)return null;
   const withPrev=em.mod==="25"&&S.visit==="annual";
   const route=pv.best;
@@ -784,11 +793,14 @@ function render(){
   const mi=$("#minutes"); if(document.activeElement!==mi)mi.value=S.minutes||"";
   const mc=S.payer==="medicare", md=S.payer==="medicaid";
   const annual=S.visit==="annual"&&!(md&&S.mannual==="office");
-  const hasProb=!annual||S.aprob==="yes";
+  const hasProb=!annual||S.aprob==="yes"||(annual&&mc&&S.atcm==="yes");
   $("#f-mplan").hidden=!(md&&S.visit==="annual");
   $("#f-g2211").hidden=md||(S.payer==="private"&&annual);
   $("#annual-box").hidden=!annual;
-  $("#tcm-box").hidden=S.visit!=="tcm";
+  const awvTcmUI=annual&&mc&&S.atcm==="yes";
+  $("#tcm-box").hidden=!(S.visit==="tcm"||awvTcmUI);
+  $("#f-atcm").hidden=!mc;
+  $("#f-aprob").hidden=awvTcmUI;
   $("#f-ptloc").hidden=S.setting==="office";
   $("#proc-box").hidden=S.setting!=="office";
   $("#f-plan").hidden=!(md||S.payer==="private");
@@ -799,7 +811,7 @@ function render(){
   $("#f-awv").hidden=!mc; $("#f-age").hidden=mc; $("#f-addons").hidden=!mc;
   ADDONS.forEach(a=>{const b=$('[data-flag="'+a.k+'"]');const ok=addonOK(a);b.disabled=!ok;if(!ok)b.setAttribute("aria-pressed","false");});
   ["#prob-box","#data-box","#risk-box","#time-box"].forEach(id=>$(id).hidden=!hasProb);
-  $("#time-label").textContent=annual?"Minutes on the problem only":S.visit==="tcm"?"Your total minutes today (used only if TCM doesn't apply)":"Your total minutes today";
+  $("#time-label").textContent=awvTcmUI?"Minutes on the problems only (used only if TCM doesn't apply)":annual?"Minutes on the problem only":S.visit==="tcm"?"Your total minutes today (used only if TCM doesn't apply)":"Your total minutes today";
   $("#time-hint").textContent=annual?"Count only time spent on the problem, never the preventive portion.":"Everything you did on this date: chart prep, visit, orders, notes, coordination. Not staff time.";
 
   const o=compute();
@@ -835,7 +847,7 @@ function render(){
     const done=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy codes",1500)};
     try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(_){b.textContent=txt}};
   $("#save").onclick=()=>{if(!o.lines.length){toast("Nothing to save yet");return;}
-    const vt={annual:"Annual",fu:"Follow-up",tcm:"Post-discharge"}[S.visit], py={medicare:"Medicare",medicaid:"IL Medicaid",private:"Private"}[S.payer];
+    const vt=S.visit==="annual"&&o.tcm?"Annual + post-discharge":{annual:"Annual",fu:"Follow-up",tcm:"Post-discharge"}[S.visit], py={medicare:"Medicare",medicaid:"IL Medicaid",private:"Private"}[S.payer];
     saveEntry(vt+" · "+py,summary,o.total);};
   $("#reset").onclick=()=>{S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,setting:S.setting,ptLoc:S.ptLoc,mannual:S.mannual,planMedicaid:S.planMedicaid,planPrivate:S.planPrivate});render();};
   $("#example").onclick=()=>{S=clone(EXAMPLE);render();};
