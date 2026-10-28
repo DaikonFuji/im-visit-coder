@@ -657,9 +657,9 @@ function compute(){
     if(!ok)out.notes.push({t:"warn",m:"TCM not allowed: it needs "+[S.tcmContact!=="yes"?"contact within 2 business days of discharge":"",S.tcmMed!=="yes"?"medication reconciliation by this visit":"",S.tcmDays==="late"?"a visit within 14 days of discharge":""].filter(Boolean).join(" and ")+". Billed as "+alt+" instead."});
     else if(!tc)out.notes.push({t:"warn",m:"TCM needs at least moderate MDM. Billed as "+alt+" instead."});
     if(tc&&L===4&&S.tcmDays==="14")out.notes.push({t:"up",m:"99496 (3.79) needs high MDM and a visit within 7 days. This visit qualifies for 99495."});
-    if(tc&&W[tc]+0.25+1e-9>=emBase){
+    if(tc){
       add(tc); out.tcm=tc; g2211Pays=false;
-      if(emBase>W[tc]+1e-9)out.notes.push({t:"info",m:"TCM chosen even though "+(annual?"an office visit with -25":"a regular office visit")+" is slightly higher ("+f2(emBase)+" vs "+f2(W[tc])+"): TCM covers the whole 30 days after discharge and avoids -25 and G2211 denials."});
+      if(emBase>W[tc]+1e-9)out.notes.push({t:"info",m:"Alternative: "+(annual?"an office visit with -25":"a regular office visit")+" ("+(pv.best==="time"?pv.time.code:pv.mdm.code)+(g2211Wanted&&!md?" + G2211":"")+") would be "+f2(emBase)+" wRVU vs "+f2(W[tc])+" for "+tc+". TCM is shown because this is a post-discharge visit: it covers the 30 days after discharge and avoids -25 and G2211 denials. You can bill one or the other, not both."});
       out.notes.push({t:"info",m:"Bill TCM once per 30 days after discharge, dated today. It is today's office visit, so don't also bill 99212–99215"+(annual?"; all problems managed today count toward the TCM MDM. TCM doesn't take modifier 25. Document the AWV and the TCM visit separately.":".")+" Check that the patient's plan pays TCM."});
     }else{
       pushEM(pv,emMod,add);
@@ -826,12 +826,17 @@ function render(){
   const pv=o.pv;
   if(pv){
     const t=pv.time;
+    if(o.tcm){
+      const alt=pv.best==="time"?pv.time:pv.mdm;
+      h+='<div class="cmp"><div class="best"><span class="k">TCM<span class="badge">Billed</span></span><span class="v">'+o.tcm+'</span><span class="s">'+LV[pv.mdm.level]+' MDM · '+f2(W[o.tcm])+' wRVU · time doesn\'t count</span></div><div><span class="k">Office visit instead</span><span class="v">'+alt.code+(S.visit==="annual"?"-25":"")+'</span><span class="s">'+(pv.best==="time"?S.minutes+" min":LV[pv.mdm.level]+" MDM")+' · '+f2(alt.base)+' wRVU</span></div></div>';
+    }else{
     const mdmBest=pv.best==="mdm";
-    h+='<div class="cmp"><div class="'+(mdmBest?"best":"")+'"><span class="k">By MDM'+(mdmBest?'<span class="badge">Best</span>':'')+'</span><span class="v">'+pv.mdm.code+'</span><span class="s">'+LV[pv.mdm.level]+' · '+f2(pv.mdm.base)+' wRVU</span></div>';
-    h+='<div class="'+(!mdmBest?"best":"")+'"><span class="k">By time'+(!mdmBest?'<span class="badge">Best</span>':'')+'</span>';
-    if(t)h+='<span class="v">'+t.code+(t.pro.units?' + '+t.pro.units+'×'+t.pro.code:'')+'</span><span class="s">'+S.minutes+' min · '+f2(t.base)+' wRVU</span>';
-    else h+='<span class="v">—</span><span class="s">Enter minutes in step 6</span>';
-    h+='</div></div>';
+      h+='<div class="cmp"><div class="'+(mdmBest?"best":"")+'"><span class="k">By MDM'+(mdmBest?'<span class="badge">Best</span>':'')+'</span><span class="v">'+pv.mdm.code+'</span><span class="s">'+LV[pv.mdm.level]+' · '+f2(pv.mdm.base)+' wRVU</span></div>';
+      h+='<div class="'+(!mdmBest?"best":"")+'"><span class="k">By time'+(!mdmBest?'<span class="badge">Best</span>':'')+'</span>';
+      if(t)h+='<span class="v">'+t.code+(t.pro.units?' + '+t.pro.units+'×'+t.pro.code:'')+'</span><span class="s">'+S.minutes+' min · '+f2(t.base)+' wRVU</span>';
+      else h+='<span class="v">—</span><span class="s">Enter minutes in step 6</span>';
+      h+='</div></div>';
+    }
     const met=l=>l>=pv.mdm.level?' met':'';
     h+='<div class="mdm"><div><span class="k">Problems</span><span class="v'+met(pv.p)+'">'+(probLevel()?LV[pv.p]:"—")+'</span></div><div><span class="k">Data</span><span class="v'+met(pv.d)+'">'+(pv.d===1?"Minimal":pv.d===2?"Limited":pv.d===3?"Moderate":"Extensive")+'</span></div><div><span class="k">Risk</span><span class="v'+met(pv.r)+'">'+LV[pv.r]+'</span></div><div><span class="k">MDM (2 of 3)</span><span class="v">'+LV[pv.mdm.level]+'</span></div></div>';
     const pi=probInfo(); if(pi.l)h+='<div class="why">Problems = '+LV[pi.l]+' because of: '+pi.why.join(", ")+'.</div>';
