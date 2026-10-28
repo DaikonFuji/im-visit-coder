@@ -311,7 +311,7 @@ a{color:var(--accent)}
           <tr><th>Rule</th><th>Medicare</th><th>IL Medicaid</th><th>Private</th></tr>
           <tr><td>Annual visit</td><td>IPPE / AWV only</td><td>99385–99397 + Dx Z00.00 / Z00.01. 1 per 333 days (2nd with new PCP or female exam). Ages 18–20 = Healthy Kids (EPSDT)</td><td>99385–99397 + Dx Z00.00 / Z00.01</td></tr>
           <tr><td>Annual + problem (-25)</td><td>Paid</td><td>Managed care: usually paid with -25 (some plans 50%). HFS fee-for-service: one code only</td><td>Usually paid; some cut to 50%</td></tr>
-          <tr><td>G2211 (+0.33)</td><td>Paid; OK on -25 with AWV/IPPE since 2025</td><td>Not paid; don't bill</td><td>Varies; Ambetter IL stopped Apr 2026</td></tr>
+          <tr><td>G2211 (+0.33)</td><td>Paid; OK on -25 with AWV/IPPE since 2025</td><td>Not paid; don't bill</td><td>Follow-ups only, if the plan pays it. Never with an annual (-25). Not paid by UHC commercial or Ambetter IL</td></tr>
           <tr><td>Prolonged (+0.61 / 15 min)</td><td>G2212: 99215 at 69 min, 99205 at 89</td><td>99417: 55 / 75 min (verify)</td><td>99417: 55 / 75 min</td></tr>
           <tr><td>AWV extras</td><td>ACP 99497-33 (1.50) / 99498 (1.40); G0444 depression (0.18); G0442 alcohol screen (0.18), G0443 counseling (0.60); G0537 ASCVD risk (0.18); G0446 CVD counseling (0.60); G0136 activity &amp; nutrition (0.18); 99406/99407 tobacco (0.24/0.50); G0447 obesity (0.60); G0296 lung screening visit (0.52); G0101 (0.44), Q0091 (0.36)</td><td>–</td><td>–</td></tr>
         </table></div>
@@ -441,7 +441,9 @@ function compute(){
     pv=problemVisit(emPt,S.payer,S.minutes); out.pv=pv;
   }
   const g2211Wanted=S.g2211==="yes" && pv;
-  const g2211Pays=g2211Wanted && !md;
+  const prAnnual=pr&&annual;
+  const g2211Pays=g2211Wanted && !md && !prAnnual;
+  if(prAnnual&&pv)out.notes.push({t:"info",m:"No G2211: it never attaches to a preventive code, and Medicare's exception for -25 visits with a wellness visit doesn't apply to private plans. Bill G2211 to private plans on follow-up visits only."});
 
   if(annual){
     const addPrev=()=>add(prev,"",undefined,D[prev]+" · Dx Z00.00 (normal) or Z00.01 (abnormal findings)");
@@ -472,7 +474,7 @@ function compute(){
   if(g2211Pays){
     add("G2211");
     if(annual&&mc)out.notes.push({t:"info",m:"G2211 on a -25 visit is payable because it is billed with an AWV/IPPE (Medicare rule since 2025)."});
-    if(pr)out.notes.push({t:"warn",m:"Many private plans don't pay G2211 (Ambetter IL stopped in April 2026). Confirm with the payer."});
+    if(pr)out.notes.push({t:"warn",m:"Many private plans don't pay G2211, including UnitedHealthcare commercial (since Sept 2024) and Ambetter IL (since Apr 2026). Medicare Advantage plans generally do. Confirm with the payer."});
   }
   if(md&&pv)out.notes.push({t:"info",m:"No G2211: Illinois Medicaid does not pay it."});
   if(pv&&pv.time&&pv.time.pro.units&&md)out.notes.push({t:"warn",m:"Confirm your Medicaid plan pays prolonged time (99417)."});
@@ -539,7 +541,7 @@ function render(){
   const annual=S.visit==="annual"&&!(md&&S.mannual==="office");
   const hasProb=!annual||S.aprob==="yes";
   $("#f-mplan").hidden=!(md&&S.visit==="annual");
-  $("#f-g2211").hidden=md;
+  $("#f-g2211").hidden=md||(S.payer==="private"&&annual);
   $("#annual-box").hidden=!annual;
   $("#f-awv").hidden=!mc; $("#f-age").hidden=mc; $("#f-addons").hidden=!mc;
   ADDONS.forEach(a=>{const b=$('[data-flag="'+a.k+'"]');const ok=addonOK(a);b.disabled=!ok;if(!ok)b.setAttribute("aria-pressed","false");});
