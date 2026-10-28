@@ -168,12 +168,12 @@ a{color:var(--accent)}
           <h2><span class="n">2</span>Visit type</h2>
           <div class="seg" data-key="visit"><button data-val="annual">Annual physical</button><button data-val="fu">Follow-up / problem visit</button></div>
           <div class="field" id="f-mplan"><div class="label">How your clinic bills Medicaid annuals</div>
-            <div class="seg" data-key="mannual"><button data-val="office">Office visit only<small>new / follow-up codes</small></button><button data-val="prev">Preventive code<small>99385–99397, HFS handbook</small></button></div></div>
+            <div class="seg" data-key="mannual"><button data-val="mco">Managed care plan<small>preventive + -25 visit</small></button><button data-val="ffs">HFS fee-for-service<small>one code per visit</small></button><button data-val="office">Office visit only<small>no preventive code</small></button></div></div>
           <div id="annual-box" class="row2">
             <div class="field" id="f-awv"><div class="label">Medicare annual visit</div>
               <div class="seg" data-key="awv"><button data-val="ippe">IPPE<small>1st yr of Part B</small></button><button data-val="init">First AWV</button><button data-val="sub">Repeat AWV</button></div></div>
             <div class="field" id="f-age"><div class="label">Age</div>
-              <div class="seg" data-key="age"><button data-val="18">18–39</button><button data-val="40">40–64</button><button data-val="65">65+</button></div></div>
+              <div class="seg" data-key="age"><button data-val="18">18–20</button><button data-val="21">21–39</button><button data-val="40">40–64</button><button data-val="65">65+</button></div></div>
             <div class="field"><div class="label">Also managed a real problem? <span class="hint">(adds a -25 visit)</span></div>
               <div class="seg" data-key="aprob"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
             <div class="field" id="f-addons"><div class="label">AWV add-ons</div>
@@ -284,8 +284,8 @@ a{color:var(--accent)}
         <h3>Add-ons by payer</h3>
         <div class="tw"><table>
           <tr><th>Rule</th><th>Medicare</th><th>IL Medicaid</th><th>Private</th></tr>
-          <tr><td>Annual visit</td><td>IPPE / AWV only</td><td>Many clinics bill office visits only. HFS handbook allows 1 preventive visit per 333 days, age 21+</td><td>99385–99397</td></tr>
-          <tr><td>Annual + problem (-25)</td><td>Paid</td><td>Not paid together: bill one code</td><td>Usually paid; some cut to 50%</td></tr>
+          <tr><td>Annual visit</td><td>IPPE / AWV only</td><td>99385–99397 + Dx Z00.00 / Z00.01. 1 per 333 days (2nd with new PCP or female exam). Ages 18–20 = Healthy Kids (EPSDT)</td><td>99385–99397 + Dx Z00.00 / Z00.01</td></tr>
+          <tr><td>Annual + problem (-25)</td><td>Paid</td><td>Managed care: usually paid with -25 (some plans 50%). HFS fee-for-service: one code only</td><td>Usually paid; some cut to 50%</td></tr>
           <tr><td>G2211 (+0.33)</td><td>Paid; OK on -25 with AWV/IPPE since 2025</td><td>Not paid; don't bill</td><td>Varies; Ambetter IL stopped Apr 2026</td></tr>
           <tr><td>Prolonged (+0.61 / 15 min)</td><td>G2212: 99215 at 69 min, 99205 at 89</td><td>99417: 55 / 75 min (verify)</td><td>99417: 55 / 75 min</td></tr>
           <tr><td>AWV extras</td><td>99497-33 ACP (1.50); G0444 depression screen with repeat AWV (0.18)</td><td>–</td><td>–</td></tr>
@@ -314,7 +314,7 @@ const D={"99202":"New patient, straightforward MDM","99203":"New patient, low MD
  "G0402":"IPPE (Welcome to Medicare)","G0438":"Annual wellness visit, first","G0439":"Annual wellness visit, repeat",
  "G2211":"Visit complexity add-on","G2212":"Prolonged visit (Medicare), per 15 min","99417":"Prolonged visit, per 15 min","99497":"Advance care planning, first 30 min","G0444":"Annual depression screen"};
 const LV=["—","Straightforward","Low","Moderate","High"];
-const EXAMPLE={pt:"est",payer:"medicare",mannual:"office",visit:"fu",awv:"sub",age:"65",aprob:"yes",acute:"none",chronic:"w2",
+const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",acute:"none",chronic:"w2",
  undx:false,severe:false,items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false};
 const BLANK=Object.assign({},EXAMPLE,{chronic:"none",items:0,risk:"min",minutes:0});
 let S=Object.assign({},EXAMPLE);
@@ -372,35 +372,40 @@ function compute(){
   let prev=null;
   if(annual){
     if(mc){prev={ippe:"G0402",init:"G0438",sub:"G0439"}[S.awv];}
-    else{prev=(S.pt==="new"?{18:"99385",40:"99386",65:"99387"}:{18:"99395",40:"99396",65:"99397"})[S.age];}
+    else{prev=(S.pt==="new"?{18:"99385",21:"99385",40:"99386",65:"99387"}:{18:"99395",21:"99395",40:"99396",65:"99397"})[S.age];}
     if(mc)out.notes.push({t:"info",m:"Medicare does not pay routine physicals (99381–99397), so the annual visit is billed as "+(S.awv==="ippe"?"the IPPE.":"an AWV.")+" Some Medicare Advantage plans pay 99387/99397; check the plan."});
   }
 
   // problem E/M
   let pv=null, emPt=S.pt;
   if(hasProb && !noProblems){
-    if(annual && pr && S.pt==="new"){emPt="est";out.notes.push({t:"info",m:"Most payers allow one new-patient code per day, so the -25 problem visit uses the established code."});}
+    if(annual && (pr||(md&&S.mannual==="mco")) && S.pt==="new"){emPt="est";out.notes.push({t:"info",m:"Most payers allow one new-patient code per day, so the -25 problem visit uses the established code."});}
     pv=problemVisit(emPt,S.payer,S.minutes); out.pv=pv;
   }
   const g2211Wanted=S.g2211==="yes" && pv;
   const g2211Pays=g2211Wanted && !md;
 
   if(annual){
-    if(md){
+    const addPrev=()=>add(prev,"",undefined,D[prev]+" · Dx Z00.00 (normal) or Z00.01 (abnormal findings)");
+    if(md&&S.mannual==="ffs"){
       if(pv){
         const emTotal=pv.best==="time"?pv.time.base:pv.mdm.base;
-        if(emTotal>W[prev]){pushEM(pv,"",add);}else{add(prev);}
-        out.notes.push({t:"warn",m:"Illinois Medicaid does not pay a preventive code and an office visit in the same session. Bill the single code that best fits the visit; the higher-wRVU one is shown."});
-      }else add(prev);
-      out.notes.push({t:"info",m:"HFS allows one adult preventive visit per 333 days (age 21+). Ages 18–20 follow Healthy Kids rules."});
+        if(emTotal>W[prev]){pushEM(pv,"",add);}else{addPrev();}
+        out.notes.push({t:"warn",m:"HFS fee-for-service does not pay a preventive code and an office visit in the same session (Handbook 220.1.1). Bill the single code that best fits the visit; the higher-wRVU one is shown."});
+      }else addPrev();
     }else{
-      add(prev);
+      if(mc)add(prev);else addPrev();
       if(mc&&S.acp)add("99497",(S.awv==="ippe"?"":"33"));
       if(mc&&S.dep&&S.awv==="sub")add("G0444");
       if(pv){pushEM(pv,"25",add);
         if(mc)out.notes.push({t:"info",m:"Tell the patient the -25 problem visit may carry a copay or deductible, unlike the AWV."});
         if(pr)out.notes.push({t:"warn",m:"Some private plans cut the -25 problem visit to 50% and the patient may owe a copay."});
+        if(md)out.notes.push({t:"warn",m:"Managed care plans generally pay the -25 visit, but some (e.g. Centene plans such as Meridian) pay it at about 50%. The patient may owe the Medicaid copay on the problem part."});
       }
+    }
+    if(md&&S.mannual!=="office"){
+      out.notes.push({t:"info",m:"HFS allows one adult preventive visit per year (333 days); a second is allowed with a new PCP or for a female annual exam. No cost share for the preventive visit."});
+      if(S.age==="18")out.notes.push({t:"info",m:"Age 18–20 is Healthy Kids (EPSDT) in Illinois; same codes. HFS does not require the EP modifier; add it only if your plan asks."});
     }
     if(mc&&S.acp&&S.awv==="ippe")out.notes.push({t:"info",m:"Modifier 33 (no cost share) applies to ACP only with an AWV, not the IPPE."});
   }else if(pv){
@@ -421,7 +426,7 @@ function compute(){
     else{const pro=prolonged(emPt,S.minutes,S.payer);out.notes.push({t:"up",m:"Next prolonged unit ("+pro.code+") at "+pro.next+" min."});}
   }
   if(hasProb&&noProblems)out.notes.unshift({t:"warn",m:"Pick at least one problem in step 3 to level the "+(annual?"-25 ":"")+"visit."});
-  if(annual && !md && hasProb && S.aprob==="yes")out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
+  if(annual && !(md&&S.mannual==="ffs") && hasProb && S.aprob==="yes")out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
 
   out.total=out.lines.reduce((s,l)=>s+l.w*l.units,0);
   return out;
