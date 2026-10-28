@@ -5,3 +5,5 @@ A tap-through helper for internal medicine office billing: picks E/M, preventive
 Open it at https://daikonfuji.github.io/im-visit-coder/ — on Android, Chrome ⋮ menu → Add to Home screen.
 
 Reference tool only, not compliance advice. Contains no patient data.
+
+© 2026 Anh Si Le, D.O. All rights reserved. See LICENSE. Not for copying, redistribution, or commercial use without written permission.
