@@ -496,7 +496,7 @@ function docStatement(o){
   const em=o.lines.find(l=>/^992/.test(l.code)); if(!em)return null;
   const withPrev=em.mod==="25";
   const route=pv.best;
-  const pi=probInfo(), parts=[];
+  const pi=probInfo(), parts=[]; let mdmTip=false;
   const probs=pi.why.join(", ");
   let title, text;
   if(route==="time"){
@@ -510,18 +510,13 @@ function docStatement(o){
     if(pv.time.pro.units)text+=" Total time exceeded the "+pv.time.code+" maximum, supporting "+pv.time.pro.units+" unit(s) of prolonged services ("+pv.time.pro.code+").";
   }else{
     title="MDM statement ("+(withPrev?"annual + problem visit":"follow-up / problem visit")+")";
-    const dl=["Minimal","Limited","Moderate","Extensive"][pv.d-1];
-    const data=[];
-    if(S.items)data.push(S.items+" unique test(s) ordered, result(s) reviewed, or external note(s) reviewed: ***");
-    if(S.historian)data.push("history obtained from an independent historian (***)");
-    if(S.interp)data.push("independent interpretation of *** (not separately billed)");
-    if(S.discuss)data.push("discussion of management with ***");
-    const risk={min:"minimal (rest, fluids, reassurance)",low:"low (over-the-counter medication management)",mod:"moderate (prescription drug management: ***)",high:"high (*** drug therapy requiring intensive monitoring for toxicity / decision regarding hospitalization or escalation of care)"}[S.risk];
-    text=(withPrev?"The problem-oriented service was significant and separately identifiable from the preventive visit, requiring additional work beyond the preventive service. ":"")+
-      "Medical decision making is "+LV[pv.mdm.level].toLowerCase()+". Problems ("+LV[pv.p].toLowerCase()+"): "+(probs||"***")+", as noted in the Assessment and Plan. Data ("+dl.toLowerCase()+"): "+(data.length?data.join("; "):"none")+". Risk: "+risk+".";
+    text=withPrev
+      ?"The problem-oriented service was significant and separately identifiable from the preventive visit, requiring additional work beyond the preventive service, and is billed based on medical decision making as documented in the Assessment and Plan."
+      :"This visit is billed based on medical decision making as documented in the Assessment and Plan.";
+    mdmTip=true;
   }
   if(o.lines.some(l=>l.code==="G2211"))text+=" G2211: I am the continuing focal point for all needed health care services for this patient and/or am providing ongoing longitudinal care for a serious or complex condition (***).";
-  return {title,text};
+  return {title,text,mdmTip};
 }
 function pushEM(pv,mod,add){
   if(pv.best==="time"){
@@ -570,7 +565,7 @@ function render(){
   }
   if(o.notes.length){h+='<ul class="notes">';o.notes.forEach(n=>h+='<li class="'+(n.t==="warn"?"warn":n.t==="up"?"up":"")+'">'+n.m+'</li>');h+='</ul>';}
   const ds=docStatement(o);
-  if(ds)h+='<div class="stmt"><div class="eyebrow">'+ds.title+'</div><p id="stmt-text">'+ds.text.replace(/\*\*\*/g,'<mark>***</mark>')+'</p><div class="hint">Paste into your note, then replace each *** with the specifics. Epic won\'t sign a note that still has ***.</div><button class="btn" id="copy-stmt">Copy statement</button></div>';
+  if(ds)h+='<div class="stmt"><div class="eyebrow">'+ds.title+'</div><p id="stmt-text">'+ds.text.replace(/\*\*\*/g,'<mark>***</mark>')+'</p>'+(ds.text.includes("***")?'<div class="hint">Paste into your note, then replace each *** with the specifics. Epic won\'t sign a note that still has ***.</div>':'<div class="hint">Paste into your note as is.</div>')+(ds.mdmTip?'<div class="hint"><b>Make sure your Assessment and Plan shows:</b> each problem with its status (stable / worsening), data reviewed or ordered, and the management decision (e.g. medication changed). That is what supports the MDM level in an audit.</div>':'')+'<button class="btn" id="copy-stmt">Copy statement</button></div>';
   h+='<div class="actions"><button class="btn primary" id="copy">Copy codes</button><button class="btn" id="reset">Reset</button><button class="btn" id="example">Load example</button></div>';
   $("#result").innerHTML=h;
   const summary=o.lines.map(codeStr).join(", ");
