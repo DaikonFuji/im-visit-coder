@@ -160,6 +160,40 @@ th{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05
 td.c{font-family:var(--f-mono);font-weight:600;white-space:nowrap}
 td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
 a{color:var(--accent)}
+.tabs{flex-wrap:wrap}
+.tabs button{padding:7px 12px}
+select{min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);font:500 14px var(--f-body);padding:8px 10px;width:100%}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:grid;gap:12px;min-width:0}
+.card h3{font-family:var(--f-display);font-size:20px;margin:0}
+.card .lead{color:var(--muted);font-size:13px;margin:0}
+.outbox{border:1px dashed var(--line);border-radius:8px;padding:10px 12px;display:grid;gap:6px}
+.outbox .big{font-family:var(--f-mono);font-weight:600;font-size:22px}
+.outbox .big span{font:500 13px var(--f-body);color:var(--muted);margin-left:6px}
+#cm-time,#cm-apcm{display:grid;gap:12px}
+.card mark{background:var(--warn-soft);color:var(--ink);padding:0 2px;border-radius:3px}
+.reqs{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px}
+.more-grid{display:grid;gap:16px}
+@media (min-width:880px){.more-grid{grid-template-columns:1fr 1fr;align-items:start}}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;display:grid;gap:2px;min-width:0}
+.tile .k{font-size:11.5px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.tile .v{font-family:var(--f-mono);font-weight:600;font-size:22px;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12px;color:var(--muted)}
+.prog{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.prog i{display:block;height:100%;background:var(--win);border-radius:99px}
+.log{list-style:none;margin:0;padding:0;display:grid}
+.log .day{font-family:var(--f-display);font-weight:600;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:12px 0 4px;display:flex;justify-content:space-between}
+.log .ent{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.log .ent .c{font-family:var(--f-mono);font-size:13px;overflow-wrap:anywhere;min-width:0}
+.log .ent .l{font-size:12px;color:var(--muted)}
+.log .ent .w{font-family:var(--f-mono);font-weight:600}
+.x{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--paper);color:var(--muted);font-size:16px;cursor:pointer}
+.planrow{display:grid;grid-template-columns:1fr;gap:6px;padding:8px 0;border-top:1px solid var(--line)}
+.planrow .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.planrow label{font-size:12px;color:var(--muted);display:grid;gap:3px}
+.addplan{display:flex;gap:6px;margin-top:8px}
+.addplan input{flex:1;min-width:0;min-height:40px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:6px 10px;font:14px var(--f-body)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--surface);padding:8px 14px;border-radius:8px;font-size:13.5px;z-index:30}
 .legal{margin-top:24px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:11.5px;line-height:1.5;display:grid;gap:6px}
 .legal p{margin:0;max-width:90ch}
 @media (prefers-reduced-motion:no-preference){.seg button,.chk{transition:background .12s,border-color .12s,color .12s}}
@@ -174,6 +208,8 @@ a{color:var(--accent)}
     </div>
     <nav class="tabs" role="tablist">
       <button id="tab-calc" role="tab" aria-selected="true" data-tab="calc">Code a visit</button>
+      <button id="tab-more" role="tab" aria-selected="false" data-tab="more">More billing</button>
+      <button id="tab-track" role="tab" aria-selected="false" data-tab="track">Tracker</button>
       <button id="tab-rules" role="tab" aria-selected="false" data-tab="rules">Rules</button>
     </nav>
   </header>
@@ -187,13 +223,26 @@ a{color:var(--accent)}
             <div class="seg" data-key="pt"><button data-val="new">New<small>no visit in 3 yrs</small></button><button data-val="est">Established</button></div></div>
           <div class="field"><div class="label">Insurance</div>
             <div class="seg" data-key="payer"><button data-val="medicare">Medicare</button><button data-val="medicaid">IL Medicaid</button><button data-val="private">Private</button></div></div>
+          <div class="field" id="f-plan"><label class="label" for="plan">Plan</label>
+            <select id="plan"></select>
+            <details class="help"><summary>Edit what each plan pays</summary><div class="hint">Saved on this phone only. Ask your billing team, then update these.</div><div id="plan-edit"></div>
+              <div class="addplan"><input id="newplan" type="text" placeholder="Add a plan name" aria-label="New plan name"><button class="btn" id="addplan-btn">Add</button></div>
+              <button class="btn" id="resetplans-btn" style="margin-top:8px">Reset to defaults</button></details></div>
         </section>
 
         <section class="step">
           <h2><span class="n">2</span>Visit type</h2>
-          <div class="seg" data-key="visit"><button data-val="annual">Annual physical</button><button data-val="fu">Follow-up / problem visit</button></div>
+          <div class="seg" data-key="visit"><button data-val="annual">Annual physical</button><button data-val="fu">Follow-up / problem visit</button><button data-val="tcm">Post-discharge (TCM)</button></div>
           <div class="field" id="f-mplan"><div class="label">How your clinic bills Medicaid annuals</div>
             <div class="seg" data-key="mannual"><button data-val="mco">Managed care plan<small>preventive + -25 visit</small></button><button data-val="ffs">HFS fee-for-service<small>one code per visit</small></button><button data-val="office">Office visit only<small>no preventive code</small></button></div></div>
+          <div id="tcm-box" class="row2">
+            <div class="field"><div class="label">Contact within 2 business days of discharge?</div><div class="hint">Phone, portal or in person; clinical staff can make it. Two documented attempts also count.</div>
+              <div class="seg" data-key="tcmContact"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
+            <div class="field"><div class="label">Today's visit after discharge</div>
+              <div class="seg" data-key="tcmDays"><button data-val="7">Within 7 days</button><button data-val="14">8–14 days</button><button data-val="late">15+ days</button></div></div>
+            <div class="field"><div class="label">Medications reconciled by today?</div>
+              <div class="seg" data-key="tcmMed"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
+          </div>
           <div id="annual-box" class="row2">
             <div class="field" id="f-awv"><div class="label">Medicare annual visit</div>
               <div class="seg" data-key="awv"><button data-val="ippe">IPPE<small>1st yr of Part B</small></button><button data-val="init">First AWV</button><button data-val="sub">Repeat AWV</button></div></div>
@@ -263,12 +312,76 @@ a{color:var(--accent)}
           <div class="field" id="f-g2211"><div class="label">Ongoing longitudinal care or serious/complex condition? <span class="hint">(G2211)</span></div>
             <div class="seg" data-key="g2211"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
         </section>
+
+        <section class="step" id="proc-box">
+          <h2><span class="n">7</span>Procedures &amp; tests done today</h2>
+          <div class="hint">Each adds its own wRVU. Minor procedures and injections put modifier 25 on the office visit.</div>
+          <div class="chks" id="proc-list"></div>
+        </section>
       </div>
 
       <aside class="result-col" id="result-anchor">
         <div class="bill" id="result" aria-live="polite"></div>
         <p class="fine">Reference tool, not compliance advice. Bill only what your note supports. Payer rules change; recheck yearly.</p>
       </aside>
+    </div>
+  </main>
+
+  <main id="view-more" hidden>
+    <div class="more-grid">
+      <section class="card" id="ev-card">
+        <h3>Patient messages &amp; check-ins</h3>
+        <p class="lead">MyChart messages the patient starts (99421–99423) and brief phone or video check-ins (98016).</p>
+        <div class="field"><div class="label">Type</div>
+          <div class="seg" data-key="evType"><button data-val="portal">Portal messages<small>over 7 days</small></button><button data-val="call">Phone / video check-in<small>5–10 min</small></button></div></div>
+        <div class="field"><div class="label">Did the patient start it?</div><div class="seg" data-key="evInit"><button data-val="yes">Yes</button><button data-val="no">No, we did</button></div></div>
+        <div class="field"><div class="label">Related office visit in the past 7 days?</div><div class="seg" data-key="evPrior"><button data-val="no">No</button><button data-val="yes">Yes</button></div></div>
+        <div class="field"><div class="label">Led to an office visit (next 24 h or soonest slot)?</div><div class="seg" data-key="evLed"><button data-val="no">No</button><button data-val="yes">Yes</button></div></div>
+        <div class="field" id="f-evmin"><div class="label">Your total minutes <span class="hint" id="evmin-hint">(add up all replies over 7 days)</span></div>
+          <div class="stepper"><button data-nstep="evMin" data-d="-1" aria-label="1 minute less">−</button><output data-nout="evMin">0</output><button data-nstep="evMin" data-d="1" aria-label="1 minute more">+</button></div></div>
+        <div class="outbox" id="ev-out"></div>
+      </section>
+
+      <section class="card" id="cm-card">
+        <h3>Monthly care management</h3>
+        <p class="lead">Billed once per calendar month, not per visit. Only one program per patient per month.</p>
+        <div class="field"><div class="label">Program</div>
+          <div class="seg" data-key="cmProg"><button data-val="ccm">CCM<small>2+ chronic conditions</small></button><button data-val="pcm">PCM<small>1 high-risk condition</small></button><button data-val="apcm">APCM<small>Medicare, no time</small></button></div></div>
+        <div id="cm-time">
+          <div class="field"><div class="label">Who did the work?</div><div class="seg" data-key="cmWho"><button data-val="md">Me personally</button><button data-val="staff">My clinical staff</button></div></div>
+          <div class="field" id="f-cmcomplex"><div class="label">Care plan substantially changed this month (moderate/high MDM)?</div><div class="seg" data-key="cmComplex"><button data-val="no">No</button><button data-val="yes">Yes (complex CCM)</button></div></div>
+          <div class="field"><div class="label">Minutes this month</div>
+            <div class="stepper"><button data-nstep="cmMin" data-d="-5" aria-label="5 minutes less">−5</button><output data-nout="cmMin">0</output><button data-nstep="cmMin" data-d="5" aria-label="5 minutes more">+5</button></div></div>
+        </div>
+        <div id="cm-apcm">
+          <div class="field"><div class="label">Chronic conditions</div><div class="seg" data-key="cmCond"><button data-val="1">0–1</button><button data-val="2">2 or more</button></div></div>
+          <div class="field"><div class="label">Qualified Medicare Beneficiary (QMB)?</div><div class="seg" data-key="cmQmb"><button data-val="no">No</button><button data-val="yes">Yes</button></div></div>
+        </div>
+        <div class="outbox" id="cm-out"></div>
+      </section>
+
+      <section class="card" id="cog-card">
+        <h3>Cognitive assessment &amp; care plan (99483)</h3>
+        <p class="lead">One of the highest-value office codes (3.84 wRVU). Schedule it as its own visit when a cognitive screen is positive. Typically 60 minutes; once per 180 days; no office visit billed the same day.</p>
+        <div class="chks" id="cog-list"></div>
+        <div class="outbox" id="cog-out"></div>
+      </section>
+    </div>
+  </main>
+
+  <main id="view-track" hidden>
+    <div class="ref">
+      <div class="tiles" id="tiles"></div>
+      <section class="card">
+        <div class="row2">
+          <div class="field"><label class="label" for="goal">Daily wRVU goal</label><input id="goal" type="number" inputmode="decimal" step="0.5" min="0" placeholder="e.g. 20" style="min-height:44px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);padding:6px 10px;font:600 18px var(--f-mono)"></div>
+          <div class="field"><div class="label">Today vs goal</div><div class="prog" aria-hidden="true"><i id="goal-bar" style="width:0"></i></div><div class="hint" id="goal-txt">Set a goal to see progress.</div></div>
+        </div>
+        <div class="actions" style="padding:0"><button class="btn" id="export-btn">Export spreadsheet (CSV)</button><button class="btn" id="clear-btn">Clear all</button></div>
+        <div class="hint">Saved only on this phone or computer, in this browser. No patient information is stored: only date, codes and wRVUs. Export now and then as a backup.</div>
+        <div id="clear-confirm" hidden class="outbox"><b>Delete every saved visit?</b><div class="actions" style="padding:0"><button class="btn primary" id="clear-yes">Delete all</button><button class="btn" id="clear-no">Cancel</button></div></div>
+      </section>
+      <section class="card"><h3>Saved visits</h3><ul class="log" id="log"></ul></section>
     </div>
   </main>
 
@@ -319,6 +432,25 @@ a{color:var(--accent)}
         </table></div>
       </section>
       <section>
+        <h3>Procedures, transitions and monthly codes</h3>
+        <div class="tw"><table>
+          <tr><th>Service</th><th>Code</th><th>wRVU</th><th>Key rule</th></tr>
+          <tr><td>Large / medium / small joint injection</td><td class="c">20610 / 20605 / 20600</td><td class="n">0.77 / 0.66 / 0.64</td><td>-25 on the office visit; no G2211 that day (Medicare)</td></tr>
+          <tr><td>ECG with interpretation</td><td class="c">93000</td><td class="n">0.17</td><td>No -25 needed</td></tr>
+          <tr><td>IM/SC injection; vaccine admin</td><td class="c">96372; 90471 (+90472)</td><td class="n">0.17; 0.17 (+0.15)</td><td>Medicare flu/pneumococcal: G0008/G0009 (flat fee). G2211 still allowed with vaccines</td></tr>
+          <tr><td>TCM, moderate MDM, visit ≤14 days</td><td class="c">99495</td><td class="n">2.78</td><td>Contact within 2 business days; meds reconciled by the visit; once per 30 days</td></tr>
+          <tr><td>TCM, high MDM, visit ≤7 days</td><td class="c">99496</td><td class="n">3.79</td><td>Same, plus visit within 7 days</td></tr>
+          <tr><td>Portal messages (7 days)</td><td class="c">99421 / 99422 / 99423</td><td class="n">0.25 / 0.50 / 0.80</td><td>5–10 / 11–20 / 21+ min; patient-started; not tied to a visit in the past 7 days</td></tr>
+          <tr><td>Phone/video check-in</td><td class="c">98016</td><td class="n">0.30</td><td>5–10 min, established patient</td></tr>
+          <tr><td>CCM, staff 20 min (+20)</td><td class="c">99490 (+99439)</td><td class="n">1.00 (+0.70)</td><td>2+ chronic conditions; consent; care plan; monthly</td></tr>
+          <tr><td>CCM, physician 30 min (+30)</td><td class="c">99491 (+99437)</td><td class="n">1.50 (+1.00)</td><td>Your own time</td></tr>
+          <tr><td>Complex CCM, staff 60 min (+30)</td><td class="c">99487 (+99489)</td><td class="n">1.81 (+1.00)</td><td>Care plan substantially revised</td></tr>
+          <tr><td>PCM, physician / staff 30 min</td><td class="c">99424 / 99426</td><td class="n">1.45 / 1.00</td><td>One high-risk condition</td></tr>
+          <tr><td>APCM levels 1 / 2 / 3</td><td class="c">G0556 / G0557 / G0558</td><td class="n">0.25 / 0.77 / 1.67</td><td>Medicare; no time; not with CCM/PCM/TCM same month</td></tr>
+          <tr><td>Cognitive assessment &amp; care plan</td><td class="c">99483</td><td class="n">3.84</td><td>All 11 elements; once per 180 days</td></tr>
+        </table></div>
+      </section>
+      <section>
         <h3>Put this app on your home screen</h3>
         <p>Open <b>daikonfuji.github.io/im-visit-coder</b> on your phone. <b>Chrome:</b> tap ⋮, then <b>Add to Home screen</b> (or <b>Install app</b>). <b>Firefox:</b> tap ⋮, then <b>Add app to Home screen</b>. It opens full-screen like an app and keeps working without signal after the first visit.</p>
         <p>On a computer, the same link shows the codes beside the form.</p>
@@ -338,12 +470,12 @@ a{color:var(--accent)}
 (function(){
 const W={"99202":.93,"99203":1.6,"99204":2.6,"99205":3.5,"99212":.7,"99213":1.3,"99214":1.92,"99215":2.8,
  "99385":1.92,"99386":2.33,"99387":2.5,"99395":1.75,"99396":1.9,"99397":2.0,"G0402":2.6,"G0438":2.6,"G0439":1.92,
- "G2211":.33,"G2212":.61,"99417":.61,"99497":1.5,"99498":1.4,"G0444":.18,"G0442":.18,"G0443":.6,"G0446":.6,"G0447":.6,"G0537":.18,"G0136":.18,"99406":.24,"99407":.5,"G0296":.52,"G0101":.44,"Q0091":.36};
+ "G2211":.33,"G2212":.61,"99417":.61,"99497":1.5,"99498":1.4,"G0444":.18,"G0442":.18,"G0443":.6,"G0446":.6,"G0447":.6,"G0537":.18,"G0136":.18,"99406":.24,"99407":.5,"G0296":.52,"G0101":.44,"Q0091":.36,"99495":2.78,"99496":3.79,"99421":.25,"99422":.5,"99423":.8,"98016":.3,"99490":1,"99439":.7,"99491":1.5,"99437":1,"99487":1.81,"99489":1,"99424":1.45,"99425":1,"99426":1,"99427":.71,"G0556":.25,"G0557":.77,"G0558":1.67,"99483":3.84};
 const D={"99202":"New patient, straightforward MDM","99203":"New patient, low MDM","99204":"New patient, moderate MDM","99205":"New patient, high MDM",
  "99212":"Established, straightforward MDM","99213":"Established, low MDM","99214":"Established, moderate MDM","99215":"Established, high MDM",
  "99385":"Preventive, new, 18–39","99386":"Preventive, new, 40–64","99387":"Preventive, new, 65+","99395":"Preventive, est., 18–39","99396":"Preventive, est., 40–64","99397":"Preventive, est., 65+",
  "G0402":"IPPE (Welcome to Medicare)","G0438":"Annual wellness visit, first","G0439":"Annual wellness visit, repeat",
- "G2211":"Visit complexity add-on","G2212":"Prolonged visit (Medicare), per 15 min","99417":"Prolonged visit, per 15 min","99497":"Advance care planning, first 30 min","99498":"Advance care planning, each extra 30 min","G0444":"Annual depression screen","G0442":"Annual alcohol screen","G0443":"Alcohol counseling, 15 min","G0446":"Cardiovascular behavioral counseling","G0447":"Obesity behavioral counseling","G0537":"ASCVD risk assessment","G0136":"Physical activity & nutrition assessment","99406":"Tobacco counseling, 3–10 min","99407":"Tobacco counseling, over 10 min","G0296":"Lung cancer screening decision visit","G0101":"Screening pelvic and breast exam","Q0091":"Screening Pap collection"};
+ "G2211":"Visit complexity add-on","G2212":"Prolonged visit (Medicare), per 15 min","99417":"Prolonged visit, per 15 min","99497":"Advance care planning, first 30 min","99498":"Advance care planning, each extra 30 min","G0444":"Annual depression screen","G0442":"Annual alcohol screen","G0443":"Alcohol counseling, 15 min","G0446":"Cardiovascular behavioral counseling","G0447":"Obesity behavioral counseling","G0537":"ASCVD risk assessment","G0136":"Physical activity & nutrition assessment","99406":"Tobacco counseling, 3–10 min","99407":"Tobacco counseling, over 10 min","G0296":"Lung cancer screening decision visit","G0101":"Screening pelvic and breast exam","Q0091":"Screening Pap collection","99495":"Transitional care management, moderate MDM, visit within 14 days","99496":"Transitional care management, high MDM, visit within 7 days"};
 const ADDONS=[
  {k:"acp",code:"99497",m33:1,label:"Advance care planning, 16+ min",hint:"Add -33 with an AWV so the patient has no cost share"},
  {k:"acp2",code:"99498",m33:1,label:"Advance care planning, each extra 30 min",hint:"46+ minutes total; needs 99497",req:"acp"},
@@ -360,10 +492,58 @@ const ADDONS=[
  {k:"pelv",code:"G0101",label:"Screening pelvic and breast exam",hint:"Every 2 years (yearly if high risk)"},
  {k:"pap",code:"Q0091",label:"Screening Pap collection",hint:"With the pelvic exam when a Pap is due"}
 ];
+const PROCS=[
+ {k:"ecg",code:"93000",w:.17,label:"ECG with interpretation",hint:"No -25 needed"},
+ {k:"spiro",code:"94010",w:.17,label:"Spirometry",hint:"No -25 needed",excl:"spiro2"},
+ {k:"spiro2",code:"94060",w:.21,label:"Spirometry before & after bronchodilator",hint:"No -25 needed",excl:"spiro"},
+ {k:"inj",code:"96372",w:.17,m25:1,label:"IM / subcutaneous injection",hint:"e.g. ceftriaxone, B12, Toradol (drug billed separately)"},
+ {k:"vax",code:"90471",w:.17,m25:1,vax:1,only:"nonmc",label:"Vaccine given, first",hint:"Non-Medicare"},
+ {k:"vax2",code:"90472",w:.15,m25:1,vax:1,only:"nonmc",req:"vax",label:"Each additional vaccine",hint:"With 90471"},
+ {k:"flu",code:"G0008",w:0,m25:1,vax:1,only:"mc",label:"Flu shot given (Medicare)",hint:"Paid as a flat fee; wRVU credit varies by group"},
+ {k:"pneu",code:"G0009",w:0,m25:1,vax:1,only:"mc",label:"Pneumococcal vaccine given (Medicare)",hint:"Paid as a flat fee; wRVU credit varies by group"},
+ {k:"covid",code:"90480",w:.24,m25:1,vax:1,label:"COVID-19 vaccine given",hint:"All payers"},
+ {k:"j1",code:"20610",w:.77,m25:1,label:"Large joint injection / aspiration",hint:"Knee, shoulder, hip, subacromial bursa"},
+ {k:"j2",code:"20605",w:.66,m25:1,label:"Medium joint injection",hint:"Wrist, elbow, ankle, olecranon bursa"},
+ {k:"j3",code:"20600",w:.64,m25:1,label:"Small joint injection",hint:"Fingers, toes"},
+ {k:"tp",code:"20552",w:.64,m25:1,label:"Trigger point injection, 1–2 muscles",hint:""},
+ {k:"ts",code:"20550",w:.73,m25:1,label:"Tendon sheath / ligament injection",hint:"e.g. trigger finger, de Quervain, plantar fascia"},
+ {k:"wax",code:"69210",w:.59,m25:1,label:"Impacted ear wax removal with instruments",hint:"Curette or forceps. Irrigation alone (69209) has no wRVU"},
+ {k:"bx1",code:"11102",w:.64,m25:1,label:"Skin biopsy, shave (tangential)",hint:"First lesion"},
+ {k:"bx2",code:"11104",w:.81,m25:1,label:"Skin biopsy, punch",hint:"First lesion"},
+ {k:"id",code:"10060",w:1.19,m25:1,g10:1,label:"Incision & drainage, simple abscess",hint:"10-day global period"},
+ {k:"ak",code:"17000",w:.59,m25:1,g10:1,label:"Destroy actinic keratosis, first lesion",hint:"Cryotherapy; 10-day global"},
+ {k:"wart",code:"17110",w:.68,m25:1,g10:1,label:"Destroy warts / benign lesions, up to 14",hint:"Cryotherapy; 10-day global"},
+ {k:"tags",code:"11200",w:.8,m25:1,g10:1,label:"Skin tag removal, up to 15",hint:"Often cosmetic; check coverage. 10-day global"}
+];
+const procOK=p=>(!p.only||(p.only==="mc")===(S.payer==="medicare"))&&(!p.req||S[p.req]);
+const DEFAULT_PLANS={
+ medicaid:[
+  {id:"mcounk",name:"Managed care plan (not listed / not sure)",g2211:"no",m25:"unk"},
+  {id:"abh",name:"Aetna Better Health of Illinois",g2211:"no",m25:"full"},
+  {id:"bcch",name:"Blue Cross Community Health Plans",g2211:"no",m25:"unk"},
+  {id:"countycare",name:"CountyCare",g2211:"no",m25:"unk"},
+  {id:"meridian",name:"Meridian",g2211:"no",m25:"half"},
+  {id:"molina",name:"Molina",g2211:"no",m25:"unk"},
+  {id:"ffs",name:"HFS fee-for-service (no plan)",g2211:"no",m25:"none"}],
+ private:[
+  {id:"unk",name:"Other / not sure",g2211:"unk",m25:"unk"},
+  {id:"bcbsil",name:"Blue Cross Blue Shield of Illinois",g2211:"unk",m25:"unk"},
+  {id:"aetna",name:"Aetna (commercial)",g2211:"unk",m25:"unk"},
+  {id:"cigna",name:"Cigna",g2211:"unk",m25:"unk"},
+  {id:"humana",name:"Humana (commercial)",g2211:"yes",m25:"unk"},
+  {id:"uhc",name:"UnitedHealthcare (commercial)",g2211:"no",m25:"unk"},
+  {id:"ambetter",name:"Ambetter of Illinois",g2211:"no",m25:"unk"}]
+};
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(_){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}}};
+let PLANS=store.get("imvc-plans-v1",null)||JSON.parse(JSON.stringify(DEFAULT_PLANS));
+const curPlan=()=>{const list=PLANS[S.payer];if(!list)return null;const id=S.payer==="medicaid"?S.planMedicaid:S.planPrivate;return list.find(p=>p.id===id)||list[0];};
+const COG=["Independent historian (family or caregiver) present","Cognition-focused history and exam","Moderate or high medical decision making","Function: ADLs, IADLs and decision-making capacity","Dementia staging with a standardized tool (e.g. FAST, CDR)","Medication reconciliation, including high-risk medications","Neuropsychiatric and behavioral symptoms, including depression, with a standardized tool","Safety: home, driving, wandering","Caregiver identified; their knowledge, needs and supports assessed","Advance care planning developed or reviewed","Written care plan created and shared with patient and caregiver, with community referrals"];
 const addonOK=a=>(!a.only||S.awv===a.only)&&(!a.req||S[a.req]);
 const LV=["—","Straightforward","Low","Moderate","High"];
 const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",
- prob:{minor:0,simple:0,sacute:0,comp:0,cs:1,cw:1,csev:0,undx:0,threat:0},items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false};
+ prob:{minor:0,simple:0,sacute:0,comp:0,cs:1,cw:1,csev:0,undx:0,threat:0},items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false,
+ planMedicaid:"mcounk",planPrivate:"unk",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",
+ evType:"portal",evInit:"yes",evPrior:"no",evLed:"no",evMin:12,cmProg:"ccm",cmWho:"staff",cmComplex:"no",cmMin:25,cmCond:"2",cmQmb:"no",cog:[]};
 const clone=o=>JSON.parse(JSON.stringify(o));
 const BLANK=Object.assign(clone(EXAMPLE),{prob:{minor:0,simple:0,sacute:0,comp:0,cs:0,cw:0,csev:0,undx:0,threat:0},items:0,risk:"min",minutes:0});
 let S=clone(EXAMPLE);
@@ -426,6 +606,10 @@ function compute(){
   const out={lines:[],notes:[],pv:null,total:0};
   const add=(code,mod,w,desc,units)=>out.lines.push({code,mod:mod||"",w:(w===undefined?W[code]:w),desc:desc||D[code],units:units||1});
   const mc=S.payer==="medicare", md=S.payer==="medicaid", pr=S.payer==="private";
+  const tcm=S.visit==="tcm";
+  const plan=curPlan();
+  const procs=PROCS.filter(p=>S[p.k]&&procOK(p));
+  const need25=procs.some(p=>p.m25), proc25=procs.some(p=>p.m25&&!p.vax);
   const asOffice=md&&S.visit==="annual"&&S.mannual==="office";
   const annual=S.visit==="annual"&&!asOffice;
   const hasProb=!annual||S.aprob==="yes";
@@ -448,7 +632,10 @@ function compute(){
   }
   const g2211Wanted=S.g2211==="yes" && pv;
   const prAnnual=pr&&annual;
-  const g2211Pays=g2211Wanted && !md && !prAnnual;
+  let g2211Pays=g2211Wanted && !md && !prAnnual;
+  if(g2211Pays&&pr&&need25){g2211Pays=false;out.notes.push({t:"info",m:"No G2211: private plans generally don't pay it on a -25 visit (with a procedure or injection)."});}
+  if(g2211Pays&&mc&&proc25){g2211Pays=false;out.notes.push({t:"info",m:"No G2211: Medicare doesn't pay it on a -25 visit with a procedure or injection. (It does with vaccines, the AWV and preventive services.)"});}
+  if(g2211Pays&&pr&&plan&&plan.g2211==="no"){g2211Pays=false;out.notes.push({t:"info",m:"No G2211: "+plan.name+" doesn't pay it."});}
   if(prAnnual&&pv)out.notes.push({t:"info",m:"No G2211: it never attaches to a preventive code, and Medicare's exception for -25 visits with a wellness visit doesn't apply to private plans. Bill G2211 to private plans on follow-up visits only."});
 
   if(annual){
@@ -464,8 +651,10 @@ function compute(){
       if(mc)ADDONS.forEach(a=>{if(S[a.k]&&addonOK(a))add(a.code,(a.m33&&S.awv!=="ippe")?"33":"");});
       if(pv){pushEM(pv,"25",add);
         if(mc)out.notes.push({t:"info",m:"Tell the patient the -25 problem visit may carry a copay or deductible, unlike the AWV."});
-        if(pr)out.notes.push({t:"warn",m:"Some private plans cut the -25 problem visit to 50% and the patient may owe a copay."});
-        if(md)out.notes.push({t:"warn",m:"Managed care plans generally pay the -25 visit, but some (e.g. Centene plans such as Meridian) pay it at about 50%. The patient may owe the Medicaid copay on the problem part."});
+        if(pr||md){const m=plan?plan.m25:"unk", nm=plan?plan.name:"This plan";
+          if(m==="half")out.notes.push({t:"warn",m:nm+" pays the -25 problem visit at about 50%. Your wRVU credit normally still counts in full."});
+          else if(m==="none")out.notes.push({t:"warn",m:nm+" doesn't pay the -25 problem visit with an annual."});
+          else if(m==="unk")out.notes.push({t:"warn",m:(pr?"Some private plans":"Some managed care plans")+" pay the -25 problem visit at about 50%, and the patient may owe a copay. Set this plan's rule under Plan if you know it."});}
       }
     }
     if(md&&S.mannual!=="office"){
@@ -474,8 +663,23 @@ function compute(){
     }
     if(mc&&S.awv==="ippe"&&(S.acp||S.pan))out.notes.push({t:"info",m:"Modifier 33 (no cost share) applies to ACP and G0136 only with an AWV, not the IPPE."});
     if(mc&&["alcc","cvd","tob1","tob2","obes","acp","alc","ascvd","pan"].some(k=>S[k]))out.notes.push({t:"info",m:"Document the minutes for each add-on. Time counted for one service can't be counted again for another or for the AWV."});
+  }else if(tcm&&pv){
+    const L=pv.mdm.level, ok=S.tcmContact==="yes"&&S.tcmMed==="yes"&&S.tcmDays!=="late";
+    let tc=null;
+    if(ok){if(L===4&&S.tcmDays==="7")tc="99496";else if(L>=3)tc="99495";}
+    const emBase=(pv.best==="time"?pv.time.base:pv.mdm.base)+(g2211Pays?W.G2211:0);
+    if(!ok)out.notes.push({t:"warn",m:"TCM not allowed: it needs "+[S.tcmContact!=="yes"?"contact within 2 business days of discharge":"",S.tcmMed!=="yes"?"medication reconciliation by this visit":"",S.tcmDays==="late"?"a visit within 14 days of discharge":""].filter(Boolean).join(" and ")+". Billed as a regular office visit instead."});
+    else if(!tc)out.notes.push({t:"warn",m:"TCM needs at least moderate MDM. Billed as a regular office visit instead."});
+    if(tc&&L===4&&S.tcmDays==="14")out.notes.push({t:"up",m:"99496 (3.79) needs high MDM and a visit within 7 days. This visit qualifies for 99495."});
+    if(tc&&W[tc]+1e-9>=emBase){
+      add(tc); out.tcm=tc; g2211Pays=false;
+      out.notes.push({t:"info",m:"Bill TCM once per 30 days after discharge, dated today. It covers today's visit, so don't also bill an office visit. Check that the patient's plan pays TCM."});
+    }else{
+      pushEM(pv,need25?"25":"",add);
+      if(tc)out.notes.push({t:"up",m:"A regular office visit earns more here ("+f2(emBase)+" vs "+f2(W[tc])+" for "+tc+"). You can bill one or the other, not both."});
+    }
   }else if(pv){
-    pushEM(pv,"",add);
+    pushEM(pv,need25?"25":"",add);
   }
   if(g2211Pays){
     add("G2211");
@@ -485,13 +689,21 @@ function compute(){
   if(md&&pv)out.notes.push({t:"info",m:"No G2211: Illinois Medicaid does not pay it."});
   if(pv&&pv.time&&pv.time.pro.units&&md)out.notes.push({t:"warn",m:"Confirm your Medicaid plan pays prolonged time (99417)."});
 
+  procs.forEach(p=>add(p.code,"",p.w,p.label+(p.w?"":" (flat fee)")));
+  if(need25&&pv&&!out.tcm)out.notes.push({t:"info",m:"Modifier 25 on the office visit: the visit must be significant and separate from the usual check before the procedure. Deciding to do a minor procedure is part of the procedure itself."});
+  if(procs.some(p=>p.g10))out.notes.push({t:"info",m:"10-day global period: follow-up visits for the same problem in the next 10 days aren't billed separately."});
+  // care management prompts
+  const chronic=S.prob.cs+S.prob.cw+S.prob.csev;
+  if(hasProb&&!out.tcm&&chronic>=2)out.notes.push({t:"up",m:"This patient may qualify for monthly chronic care management (CCM"+(mc?" or APCM":"")+"). See More billing."});
+  else if(hasProb&&!out.tcm&&(S.prob.cw+S.prob.csev)>=1)out.notes.push({t:"up",m:"One high-risk condition: the patient may qualify for monthly principal care management (PCM). See More billing."});
+  if(annual&&mc)out.notes.push({t:"up",m:"If today's cognitive screen is positive, schedule a cognitive assessment and care plan visit (99483, 3.84 wRVU). See More billing."});
   // level-up hints
-  if(pv){
+  if(pv&&!out.tcm){
     const tl=pv.time?pv.time.level:0;
     if(tl<4){const need=TT[emPt][tl]; out.notes.push({t:"up",m:"By time, "+emCode(emPt,tl+1)+" needs "+need+" min"+(annual?" on the problem":"")+(S.minutes?" ("+(need-S.minutes)+" more).":".")});}
     else{const pro=prolonged(emPt,S.minutes,S.payer);out.notes.push({t:"up",m:"Next prolonged unit ("+pro.code+") at "+pro.next+" min."});}
   }
-  if(hasProb&&noProblems)out.notes.unshift({t:"warn",m:"Pick at least one problem in step 3 to level the "+(annual?"-25 ":"")+"visit."});
+  if(hasProb&&noProblems&&!procs.length)out.notes.unshift({t:"warn",m:"Pick at least one problem in step 3 to level the "+(annual?"-25 ":"")+"visit."});
   if(annual && !(md&&S.mannual==="ffs") && hasProb && S.aprob==="yes")out.notes.push({t:"info",m:"Level the -25 visit on the problem work only. Trivial findings handled within the physical are not billed separately."});
 
   out.total=out.lines.reduce((s,l)=>s+l.w*l.units,0);
@@ -499,8 +711,9 @@ function compute(){
 }
 function docStatement(o){
   const pv=o.pv; if(!pv)return null;
+  if(o.tcm)return {title:"TCM statement",mdmTip:true,text:"Transitional care management. Patient discharged from *** on ***. Interactive contact with the patient/caregiver was made on *** (within 2 business days of discharge). Face-to-face visit today, within "+(S.tcmDays==="7"?"7":"14")+" days of discharge. Medication reconciliation and management completed on or before today's visit. Medical decision making is "+LV[pv.mdm.level].toLowerCase()+", as documented in the Assessment and Plan. Non-face-to-face services (review of discharge information, follow-up on pending tests and treatments, referrals, and patient/caregiver education) provided as documented."};
   const em=o.lines.find(l=>/^992/.test(l.code)); if(!em)return null;
-  const withPrev=em.mod==="25";
+  const withPrev=em.mod==="25"&&S.visit==="annual";
   const route=pv.best;
   const pi=probInfo(), parts=[]; let mdmTip=false;
   const probs=pi.why.join(", ");
@@ -544,10 +757,16 @@ function render(){
   $("#f-mplan").hidden=!(md&&S.visit==="annual");
   $("#f-g2211").hidden=md||(S.payer==="private"&&annual);
   $("#annual-box").hidden=!annual;
+  $("#tcm-box").hidden=S.visit!=="tcm";
+  $("#f-plan").hidden=!(md||S.payer==="private");
+  if(!$("#f-plan").hidden){const list=PLANS[S.payer],cp=curPlan();const sel=$("#plan");
+    const html=list.map(p=>'<option value="'+p.id+'"'+(p.id===cp.id?' selected':'')+'>'+esc(p.name)+'</option>').join("");if(sel.innerHTML!==html)sel.innerHTML=html;sel.value=cp.id;
+    if(!$("#plan-edit").contains(document.activeElement))$("#plan-edit").innerHTML=list.map(p=>'<div class="planrow"><b>'+esc(p.name)+'</b><div class="two"><label>G2211<select data-pe="g2211" data-id="'+p.id+'">'+opt(p.g2211,[["yes","Pays"],["no","Doesn't pay"],["unk","Not sure"]])+'</select></label><label>-25 visit with an annual<select data-pe="m25" data-id="'+p.id+'">'+opt(p.m25,[["full","Pays in full"],["half","Pays about 50%"],["none","Doesn't pay"],["unk","Not sure"]])+'</select></label></div></div>').join("");}
+  PROCS.forEach(p=>{const b=$('[data-flag="'+p.k+'"]');const ok=procOK(p);b.hidden=!!p.only&&((p.only==="mc")!==(S.payer==="medicare"));b.disabled=!ok;if(!ok)b.setAttribute("aria-pressed","false");});
   $("#f-awv").hidden=!mc; $("#f-age").hidden=mc; $("#f-addons").hidden=!mc;
   ADDONS.forEach(a=>{const b=$('[data-flag="'+a.k+'"]');const ok=addonOK(a);b.disabled=!ok;if(!ok)b.setAttribute("aria-pressed","false");});
   ["#prob-box","#data-box","#risk-box","#time-box"].forEach(id=>$(id).hidden=!hasProb);
-  $("#time-label").textContent=annual?"Minutes on the problem only":"Your total minutes today";
+  $("#time-label").textContent=annual?"Minutes on the problem only":S.visit==="tcm"?"Your total minutes today (used only if TCM doesn't apply)":"Your total minutes today";
   $("#time-hint").textContent=annual?"Count only time spent on the problem, never the preventive portion.":"Everything you did on this date: chart prep, visit, orders, notes, coordination. Not staff time.";
 
   const o=compute();
@@ -572,7 +791,7 @@ function render(){
   if(o.notes.length){h+='<ul class="notes">';o.notes.forEach(n=>h+='<li class="'+(n.t==="warn"?"warn":n.t==="up"?"up":"")+'">'+n.m+'</li>');h+='</ul>';}
   const ds=docStatement(o);
   if(ds)h+='<div class="stmt"><div class="eyebrow">'+ds.title+'</div><p id="stmt-text">'+ds.text.replace(/\*\*\*/g,'<mark>***</mark>')+'</p>'+(ds.text.includes("***")?'<div class="hint">Paste into your note, then replace each *** with the specifics. Epic won\'t sign a note that still has ***.</div>':'<div class="hint">Paste into your note as is.</div>')+(ds.mdmTip?'<div class="hint"><b>Make sure your Assessment and Plan shows:</b> each problem with its status (stable / worsening), data reviewed or ordered, and the management decision (e.g. medication changed). That is what supports the MDM level in an audit.</div>':'')+'<button class="btn" id="copy-stmt">Copy statement</button></div>';
-  h+='<div class="actions"><button class="btn primary" id="copy">Copy codes</button><button class="btn" id="reset">Reset</button><button class="btn" id="example">Load example</button></div>';
+  h+='<div class="actions"><button class="btn primary" id="copy">Copy codes</button><button class="btn" id="save">Save to tracker</button><button class="btn" id="reset">Reset</button><button class="btn" id="example">Load example</button></div>';
   $("#result").innerHTML=h;
   const summary=o.lines.map(codeStr).join(", ");
   $("#bar-codes").textContent=summary||"No codes yet";
@@ -582,22 +801,126 @@ function render(){
   $("#copy").onclick=e=>{const txt=summary+" — "+f2(o.total)+" wRVU";const b=e.currentTarget;
     const done=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy codes",1500)};
     try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(_){b.textContent=txt}};
-  $("#reset").onclick=()=>{S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,mannual:S.mannual});render();};
+  $("#save").onclick=()=>{if(!o.lines.length){toast("Nothing to save yet");return;}
+    const vt={annual:"Annual",fu:"Follow-up",tcm:"Post-discharge"}[S.visit], py={medicare:"Medicare",medicaid:"IL Medicaid",private:"Private"}[S.payer];
+    saveEntry(vt+" · "+py,summary,o.total);};
+  $("#reset").onclick=()=>{S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,mannual:S.mannual,planMedicaid:S.planMedicaid,planPrivate:S.planPrivate});render();};
   $("#example").onclick=()=>{S=clone(EXAMPLE);render();};
+  renderMore(); renderTrack();
+}
+function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function opt(v,arr){return arr.map(([k,l])=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+l+'</option>').join("");}
+function toast(m){let t=$(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t);}t.style.bottom=$("#bar").hidden||innerWidth>=880?"calc(20px + env(safe-area-inset-bottom,0px))":"";t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
+function copyText(txt,btn,label){const done=()=>{btn.textContent="Copied";setTimeout(()=>btn.textContent=label,1500)};try{navigator.clipboard.writeText(txt).then(done,()=>toast("Copy blocked; select the text instead"))}catch(_){toast("Copy blocked; select the text instead")}}
+
+/* ---------- More billing ---------- */
+function renderMore(){
+  $$("[data-nout]").forEach(o=>o.textContent=S[o.dataset.nout]);
+  // e-visits
+  let h="", ev=null, why=[];
+  if(S.evInit!=="yes")why.push("it must be started by the patient");
+  if(S.evPrior==="yes")why.push("it's related to an office visit in the past 7 days (that visit covers it)");
+  if(S.evLed==="yes")why.push("it led to an office visit, so the time counts toward that visit");
+  if(S.evType==="portal"){
+    $("#evmin-hint").textContent="(add up all your replies on this issue over 7 days)";
+    const m=S.evMin; ev=m>=21?"99423":m>=11?"99422":m>=5?"99421":null; if(!ev&&!why.length)why.push("it needs at least 5 minutes of your time");
+  }else{
+    $("#evmin-hint").textContent="(medical discussion time on the call)";
+    ev=S.evMin>=5?"98016":null; if(!ev&&!why.length)why.push("it needs at least 5 minutes of medical discussion");
+  }
+  if(why.length){h='<b>Not billable</b><div class="hint">Because '+why.join("; ")+'.</div>';ev=null;}
+  else{const st=S.evType==="portal"
+      ?"Online digital evaluation and management service: patient-initiated communication through the patient portal regarding ***. Cumulative time over 7 days (*** to ***): "+S.evMin+" minutes, including review of the inquiry and relevant records, assessment, and management communicated to the patient. Not related to an E/M service in the prior 7 days and did not result in an E/M visit."
+      :"Brief communication technology-based service (virtual check-in) with an established patient regarding ***, initiated by the patient. "+S.evMin+" minutes of medical discussion. Not related to an E/M service in the prior 7 days and did not lead to an E/M visit within the next 24 hours or soonest available appointment.";
+    h='<div class="big">'+ev+'<span>'+f2(W[ev])+' wRVU</span></div><div class="hint">'+(S.evType==="portal"?"99421: 5–10 min · 99422: 11–20 min · 99423: 21+ min. Your time only (not staff). Bill once per 7 days. Patient cost share applies; follow your clinic's consent process.":"Established patients; 5–10 min. Phone or video, real time. Don't use it for routine refills or result notices.")+'</div><p class="st" id="ev-st" style="margin:0;font-size:13px;background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:8px">'+st.replace(/\*\*\*/g,'<mark>***</mark>')+'</p><div class="actions" style="padding:0"><button class="btn" id="ev-copy">Copy statement</button><button class="btn primary" id="ev-save">Save to tracker</button></div>';
+    more.ev={code:ev,st};}
+  $("#ev-out").innerHTML=h;
+  if(ev){$("#ev-copy").onclick=e=>copyText(more.ev.st,e.currentTarget,"Copy statement");$("#ev-save").onclick=()=>saveEntry(S.evType==="portal"?"Portal messages":"Check-in call",ev,W[ev]);}
+  // care management
+  const P=S.cmProg; $("#cm-time").hidden=P==="apcm"; $("#cm-apcm").hidden=P!=="apcm"; $("#f-cmcomplex").hidden=!(P==="ccm"&&S.cmWho==="staff");
+  let codes=[], reqs=[], warn="";
+  const m=S.cmMin;
+  if(P==="ccm"){
+    if(S.cmWho==="md"){if(m>=30){codes.push(["99491",1]);const ex=Math.floor((m-30)/30);if(ex)codes.push(["99437",ex]);}}
+    else if(S.cmComplex==="yes"){if(m>=60){codes.push(["99487",1]);const ex=Math.floor((m-60)/30);if(ex)codes.push(["99489",ex]);}}
+    else{if(m>=20){codes.push(["99490",1]);const ex=Math.min(2,Math.floor((m-20)/20));if(ex)codes.push(["99439",ex]);}}
+    reqs=["2+ chronic conditions expected to last 12+ months (or until death) that put the patient at significant risk","Verbal or written consent documented once (cost share applies; patient can stop anytime)","Comprehensive electronic care plan, shared with the patient","24/7 access to the care team; continuity with a designated team member","Initiating visit (office visit, AWV or IPPE) if new or not seen in the past year","Log minutes each month; full time thresholds must be met (no rounding up)"];
+  }else if(P==="pcm"){
+    if(S.cmWho==="md"){if(m>=30){codes.push(["99424",1]);const ex=Math.floor((m-30)/30);if(ex)codes.push(["99425",ex]);}}
+    else{if(m>=30){codes.push(["99426",1]);const ex=Math.floor((m-30)/30);if(ex)codes.push(["99427",ex]);}}
+    reqs=["One high-risk condition expected to last 3+ months (e.g. recent hospitalization or exacerbation, or a disease-specific care plan needed)","Consent documented","Disease-specific care plan","Log minutes each month; full 30-minute blocks only"];
+  }else{
+    codes.push([S.cmCond==="1"?"G0556":S.cmQmb==="yes"?"G0558":"G0557",1]);
+    reqs=["Medicare only; no minimum time","Consent documented once (separate from CCM consent)","Practice offers 24/7 access, continuity, an electronic care plan, care-transition follow-up and care coordination","Initiating visit if new, not seen in 3 years, or no other care management in the past year","Same month: can't also bill CCM, PCM, TCM, portal e-visits or check-ins for this patient"];
+    if(S.payer!=="medicare")warn="APCM is a Medicare code.";
+  }
+  const tot=codes.reduce((a,[c,u])=>a+W[c]*u,0);
+  let ch=codes.length?'<div class="big">'+codes.map(([c,u])=>c+(u>1?" ×"+u:"")).join(" + ")+'<span>'+f2(tot)+' wRVU / month</span></div>':'<b>Not enough time yet</b><div class="hint">'+(P==="ccm"?(S.cmWho==="md"?"99491 needs 30 minutes of your own time.":S.cmComplex==="yes"?"Complex CCM needs 60 minutes of staff time.":"99490 needs 20 minutes of staff time."):"PCM needs 30 minutes.")+'</div>';
+  if(warn)ch+='<div class="hint"><b>'+warn+'</b></div>';
+  if(codes.length&&S.cmWho==="staff"&&P!=="apcm")ch+='<div class="hint">Staff time is billed under you; most groups credit you the wRVUs.</div>';
+  ch+='<ul class="reqs">'+reqs.map(r=>'<li>'+r+'</li>').join("")+'</ul>';
+  if(codes.length)ch+='<div class="actions" style="padding:0"><button class="btn primary" id="cm-save">Save to tracker</button></div>';
+  $("#cm-out").innerHTML=ch;
+  if(codes.length)$("#cm-save").onclick=()=>saveEntry(P.toUpperCase()+" (monthly)",codes.map(([c,u])=>c+(u>1?" ×"+u:"")).join(", "),tot);
+  // 99483
+  if(!$("#cog-list").children.length)$("#cog-list").innerHTML=COG.map((t,i)=>'<button class="chk" data-cog="'+i+'">'+t+'</button>').join("");
+  $$("[data-cog]").forEach(b=>b.setAttribute("aria-pressed",String(S.cog.includes(+b.dataset.cog))));
+  const done=S.cog.length;
+  $("#cog-out").innerHTML=done===COG.length
+    ?'<div class="big">99483<span>3.84 wRVU</span></div><div class="hint">All required elements checked. Prolonged time (G2212 for Medicare) can be added past the typical 60 minutes.</div><div class="actions" style="padding:0"><button class="btn primary" id="cog-save">Save to tracker</button></div>'
+    :'<b>'+done+' of '+COG.length+' required elements</b><div class="hint">All are needed to bill 99483. Otherwise bill a regular office visit by MDM or time.</div>';
+  if(done===COG.length)$("#cog-save").onclick=()=>saveEntry("Cognitive care plan","99483",W["99483"]);
+}
+const more={};
+
+/* ---------- Tracker ---------- */
+function todayStr(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function getLog(){return store.get("imvc-log-v1",[]);}
+function saveEntry(label,codes,w){const log=getLog();log.push({id:Date.now()+"-"+Math.random().toString(36).slice(2,6),date:todayStr(),label,codes,w:Math.round(w*100)/100});
+  if(store.set("imvc-log-v1",log))toast("Saved: "+f2(w)+" wRVU");else toast("Couldn't save in this browser");renderTrack();}
+function renderTrack(){
+  const log=getLog(), now=new Date(), t=todayStr(now);
+  const mon=new Date(now);mon.setDate(now.getDate()-((now.getDay()+6)%7));const ws=todayStr(mon);
+  const ms=t.slice(0,8)+"01";
+  const sum=f=>log.filter(f).reduce((a,e)=>a+e.w,0), cnt=f=>log.filter(f).length;
+  const tiles=[["Today",e=>e.date===t],["This week",e=>e.date>=ws&&e.date<=t],["This month",e=>e.date>=ms&&e.date<=t]];
+  $("#tiles").innerHTML=tiles.map(([k,f])=>'<div class="tile"><span class="k">'+k+'</span><span class="v">'+f2(sum(f))+'</span><span class="s">'+cnt(f)+' saved</span></div>').join("");
+  const goal=parseFloat(store.get("imvc-goal",""))||0, today=sum(e=>e.date===t);
+  const gi=$("#goal"); if(document.activeElement!==gi)gi.value=goal||"";
+  $("#goal-bar").style.width=goal?Math.min(100,today/goal*100)+"%":"0";
+  $("#goal-txt").textContent=goal?f2(today)+" of "+f2(goal)+" ("+Math.round(today/goal*100)+"%)":"Set a goal to see progress.";
+  if(!log.length){$("#log").innerHTML='<li class="hint">No saved visits yet. Tap "Save to tracker" after coding a visit.</li>';return;}
+  const by={};log.slice().reverse().forEach(e=>(by[e.date]=by[e.date]||[]).push(e));
+  $("#log").innerHTML=Object.keys(by).sort().reverse().map(d=>'<li class="day"><span>'+new Date(d+"T12:00").toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})+'</span><span>'+f2(by[d].reduce((a,e)=>a+e.w,0))+' wRVU</span></li>'+by[d].map(e=>'<li class="ent"><div><div class="c">'+esc(e.codes)+'</div><div class="l">'+esc(e.label)+'</div></div><span class="w">'+f2(e.w)+'</span><button class="x" data-del="'+e.id+'" aria-label="Delete this entry">×</button></li>').join("")).join("");
 }
 
 document.addEventListener("click",e=>{
   const b=e.target.closest("button"); if(!b)return;
   const seg=b.closest(".seg");
   if(seg&&b.dataset.val){S[seg.dataset.key]=b.dataset.val;render();return;}
-  if(b.dataset.flag&&!b.disabled){const k=b.dataset.flag;S[k]=!S[k];const a=ADDONS.find(x=>x.k===k);if(a&&a.excl&&S[k])S[a.excl]=false;if(k==="acp"&&!S.acp)S.acp2=false;render();return;}
+  if(b.dataset.flag&&!b.disabled&&!PROCS.some(p=>p.k===b.dataset.flag)){const k=b.dataset.flag;S[k]=!S[k];const a=ADDONS.find(x=>x.k===k);if(a&&a.excl&&S[k])S[a.excl]=false;if(k==="acp"&&!S.acp)S.acp2=false;render();return;}
+  if(b.dataset.nstep){const k=b.dataset.nstep;S[k]=Math.max(0,Math.min(600,S[k]+Number(b.dataset.d)));render();return;}
+  if(b.dataset.cog!==undefined){const i=+b.dataset.cog;S.cog=S.cog.includes(i)?S.cog.filter(x=>x!==i):S.cog.concat(i);render();return;}
+  if(b.dataset.del){store.set("imvc-log-v1",getLog().filter(e=>e.id!==b.dataset.del));renderTrack();return;}
+  if(b.id==="addplan-btn"){const n=$("#newplan").value.trim();if(!n)return;const id="u"+Date.now();PLANS[S.payer].push({id,name:n,g2211:S.payer==="medicaid"?"no":"unk",m25:"unk"});store.set("imvc-plans-v1",PLANS);if(S.payer==="medicaid")S.planMedicaid=id;else S.planPrivate=id;$("#newplan").value="";render();return;}
+  if(b.id==="resetplans-btn"){PLANS=clone(DEFAULT_PLANS);store.set("imvc-plans-v1",PLANS);S.planMedicaid="mcounk";S.planPrivate="unk";render();return;}
+  if(b.id==="export-btn"){const log=getLog();const csv="Date,Visit,Codes,wRVU\n"+log.map(e=>[e.date,e.label,e.codes,e.w].map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(",")).join("\n");
+    try{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="wRVU-log-"+todayStr()+".csv";document.body.appendChild(a);a.click();a.remove();}catch(_){toast("Export isn't available here");}return;}
+  if(b.id==="clear-btn"){$("#clear-confirm").hidden=false;return;}
+  if(b.id==="clear-no"){$("#clear-confirm").hidden=true;return;}
+  if(b.id==="clear-yes"){store.set("imvc-log-v1",[]);$("#clear-confirm").hidden=true;renderTrack();toast("All saved visits deleted");return;}
+  if(b.dataset.flag&&PROCS.some(p=>p.k===b.dataset.flag)&&!b.disabled){const p=PROCS.find(x=>x.k===b.dataset.flag);S[p.k]=!S[p.k];if(p.excl&&S[p.k])S[p.excl]=false;if(p.k==="vax"&&!S.vax)S.vax2=false;render();return;}
   if(b.dataset.pstep){const k=b.dataset.pstep;S.prob[k]=Math.max(0,Math.min(9,S.prob[k]+Number(b.dataset.d)));render();return;}
   if(b.dataset.step){S.items=Math.max(0,Math.min(9,S.items+Number(b.dataset.d)));render();return;}
   if(b.dataset.tstep){S.minutes=Math.max(0,Math.min(300,(S.minutes||0)+Number(b.dataset.tstep)));render();return;}
-  if(b.dataset.tab){const r=b.dataset.tab==="rules";$("#view-calc").hidden=r;$("#view-rules").hidden=!r;$("#bar").hidden=r;
-    $$(".tabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));window.scrollTo(0,0);}
+  if(b.dataset.tab){const v=b.dataset.tab;["calc","more","track","rules"].forEach(n=>$("#view-"+n).hidden=n!==v);$("#bar").hidden=v!=="calc";
+    $$(".tabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));if(v==="track")renderTrack();window.scrollTo(0,0);}
 });
 $("#addon-list").innerHTML=ADDONS.map(a=>'<button class="chk addon" data-flag="'+a.k+'"><span><b>'+a.label+'</b> <span class="ac">'+a.code+' · '+W[a.code].toFixed(2)+'</span><small>'+a.hint+'</small></span></button>').join("");
+$("#proc-list").innerHTML=PROCS.map(p=>'<button class="chk addon" data-flag="'+p.k+'"><span><b>'+p.label+'</b> <span class="ac">'+p.code+' · '+(p.w?p.w.toFixed(2):"flat fee")+'</span>'+(p.hint?'<small>'+p.hint+'</small>':'')+'</span></button>').join("");
+$("#plan").addEventListener("change",e=>{const v=e.target.value;if(S.payer==="medicaid"){S.planMedicaid=v;if(v==="ffs"&&S.mannual==="mco")S.mannual="ffs";else if(v!=="ffs"&&S.mannual==="ffs")S.mannual="mco";}else S.planPrivate=v;render();});
+$("#plan-edit").addEventListener("change",e=>{const t=e.target;if(!t.dataset.pe)return;const p=PLANS[S.payer].find(x=>x.id===t.dataset.id);if(p){p[t.dataset.pe]=t.value;store.set("imvc-plans-v1",PLANS);t.blur();render();}});
+$("#goal").addEventListener("input",e=>{store.set("imvc-goal",e.target.value);renderTrack();});
 $("#minutes").addEventListener("input",e=>{const v=parseInt(e.target.value,10);S.minutes=isNaN(v)?0:Math.max(0,Math.min(300,v));render();});
 const jump=()=>$("#result-anchor").scrollIntoView({behavior:"smooth",block:"start"});
 $("#bar").addEventListener("click",jump);$("#bar").addEventListener("keydown",e=>{if(e.key==="Enter")jump();});
