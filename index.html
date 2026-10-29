@@ -480,7 +480,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
 <footer class="legal wrap">
   <p><b>© 2026 Anh Si Le, D.O. All rights reserved.</b> IM Visit Coder, including its design, code, decision logic, and written content, is the intellectual property of its author. It is provided for personal clinical reference only. No part of it may be copied, modified, redistributed, resold, licensed, or used in any product or service offered for payment or other commercial benefit without prior written permission from the author.</p>
   <p>CPT® codes and descriptions are copyright American Medical Association; CPT is a registered trademark of the AMA. HCPCS codes and work RVUs are from the CMS Physician Fee Schedule. This tool is a reference aid, not legal, compliance, or billing advice; code only what your documentation supports.</p>
-  <p>Version: Oct 29, 2026 06:58 AM CT</p>
+  <p>Version: Oct 29, 2026 07:03 AM CT</p>
 </footer>
 <div id="bar" role="button" tabindex="0" aria-label="Jump to result"><div class="bc" id="bar-codes"></div><div class="bt" id="bar-total"></div></div>
 
@@ -616,7 +616,7 @@ function problemVisit(pt,payer,m){
     if(tl===4)time.pro=prolonged(pt,m,payer);
     time.base=W[time.code]+(time.pro.units||0)*W[time.pro.code||"G2212"];
   }
-  const best=(time&&time.base>mdm.base+1e-9)?"time":"mdm";
+  const best=(time&&time.base+1e-9>=mdm.base)?"time":"mdm";
   return {p,d,r,mdm,time,best};
 }
 
@@ -670,7 +670,7 @@ function compute(){
     if(!ok)out.notes.push({t:"warn",m:"TCM not allowed: it needs "+[S.tcmContact!=="yes"?"contact within 2 business days of discharge":"",S.tcmMed!=="yes"?"medication reconciliation by this visit":"",S.tcmDays==="late"?"a visit within 14 days of discharge":""].filter(Boolean).join(" and ")+". Billed as "+alt+" instead."});
     else if(!tc)out.notes.push({t:"warn",m:"TCM needs at least moderate MDM. Billed as "+alt+" instead."});
     if(tc&&L===4&&S.tcmDays==="14")out.notes.push({t:"up",m:"99496 (3.79) needs high MDM and a visit within 7 days. This visit qualifies for 99495."});
-    if(tc&&W[tc]+1e-9>=emBase){
+    if(tc&&(pv.best==="time"?W[tc]>emBase+1e-9:W[tc]+1e-9>=emBase)){
       add(tc); out.tcm=tc; g2211Pays=false;
       if(Math.abs(emBase-W[tc])<0.25)out.notes.push({t:"info",m:"Close call: "+(annual?"an office visit with -25":"a regular office visit")+" would be "+f2(emBase)+" wRVU vs "+f2(W[tc])+" for "+tc+". Either is fine; bill one or the other, not both."});
       out.notes.push({t:"info",m:"Bill TCM once per 30 days after discharge, dated today. It is today's office visit, so don't also bill 99212–99215"+(annual?"; all problems managed today count toward the TCM MDM. TCM doesn't take modifier 25. Document the AWV and the TCM visit separately.":".")+" Check that the patient's plan pays TCM."});
