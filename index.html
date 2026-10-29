@@ -122,6 +122,17 @@ details.help ul{margin:4px 0 0;padding-left:18px;display:grid;gap:6px;color:var(
 .cmp .best{background:var(--win-soft)}
 .cmp .best .k{color:var(--win)}
 .badge{display:inline-block;font:600 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;background:var(--win);color:var(--surface);padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:1px}
+.cmp3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
+.cmp3>div{padding:10px 10px;display:grid;gap:3px;align-content:start;min-width:0}
+.cmp3>div+div{border-left:1px solid var(--line)}
+.cmp3 .k{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.05em;text-transform:uppercase;line-height:1.3}
+.cmp3 .v{font-family:var(--f-mono);font-weight:600;font-size:13px;overflow-wrap:anywhere}
+.cmp3 .big3{font-family:var(--f-mono);font-weight:600;font-size:20px;font-variant-numeric:tabular-nums}
+.cmp3 .s{font-size:11.5px;color:var(--muted);line-height:1.35}
+.cmp3 .best{background:var(--win-soft)}
+.cmp3 .best .k{color:var(--win)}
+.cmp3 .na .big3,.cmp3 .na .v{color:var(--muted)}
+.cmp3 .badge{display:block;width:max-content;margin:3px 0 0}
 .mdm{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line)}
 .mdm div{padding:8px 10px;display:grid;gap:2px;min-width:0}
 .mdm div+div{border-left:1px solid var(--line)}
@@ -653,6 +664,8 @@ function compute(){
     if(ok){if(L===4&&S.tcmDays==="7")tc="99496";else if(L>=3)tc="99495";}
     const emBase=(pv.best==="time"?pv.time.base:pv.mdm.base)+(g2211Pays?W.G2211:0);
     const alt=annual?"an office visit with -25":"a regular office visit";
+    out.tcmCmp={tc,g:g2211Pays?W.G2211:0,mod:emMod,
+      reason:!ok?"Needs "+[S.tcmContact!=="yes"?"contact within 2 business days":"",S.tcmMed!=="yes"?"med reconciliation":"",S.tcmDays==="late"?"visit within 14 days":""].filter(Boolean).join(" + "):(!tc?"Needs moderate or high MDM":null)};
     if(!ok)out.notes.push({t:"warn",m:"TCM not allowed: it needs "+[S.tcmContact!=="yes"?"contact within 2 business days of discharge":"",S.tcmMed!=="yes"?"medication reconciliation by this visit":"",S.tcmDays==="late"?"a visit within 14 days of discharge":""].filter(Boolean).join(" and ")+". Billed as "+alt+" instead."});
     else if(!tc)out.notes.push({t:"warn",m:"TCM needs at least moderate MDM. Billed as "+alt+" instead."});
     if(tc&&L===4&&S.tcmDays==="14")out.notes.push({t:"up",m:"99496 (3.79) needs high MDM and a visit within 7 days. This visit qualifies for 99495."});
@@ -825,7 +838,17 @@ function render(){
   const pv=o.pv;
   if(pv){
     const t=pv.time;
-    if(o.tcm){
+    if(o.tcmCmp){
+      const c=o.tcmCmp, g=c.g, m25=c.mod?"-"+c.mod:"";
+      const opts=[
+        {k:"Office visit by MDM"+(m25?" (-25)":""),code:pv.mdm.code+m25+(g?" + G2211":""),v:pv.mdm.base+g,s:LV[pv.mdm.level]+" MDM",id:"mdm"},
+        {k:"Office visit by time"+(m25?" (-25)":""),code:pv.time?pv.time.code+m25+(pv.time.pro.units?" + "+pv.time.pro.units+"×"+pv.time.pro.code:"")+(g?" + G2211":""):"—",v:pv.time?pv.time.base+g:null,s:pv.time?S.minutes+" min":"Enter minutes in step 6",id:"time"},
+        {k:"TCM",code:c.tc||"—",v:c.tc?W[c.tc]:null,s:c.tc?(c.tc==="99496"?"High MDM, ≤7 days":"Moderate+ MDM, ≤14 days"):c.reason,id:"tcm"}];
+      const billed=o.tcm?"tcm":pv.best;
+      const chosenV=opts.find(x=>x.id===billed).v||0, other=o.total-chosenV;
+      const best=Math.max(...opts.map(x=>x.v||0));
+      h+='<div class="cmp3">'+opts.map(x=>'<div class="'+(x.id===billed?"best":"")+(x.v===null?" na":"")+'"><span class="k">'+x.k+(x.id===billed?'<span class="badge">Billed</span>':'')+'</span><span class="v">'+x.code+'</span><span class="big3">'+(x.v===null?"—":f2(x.v))+'</span><span class="s">'+x.s+'</span>'+(x.v===null?'':'<span class="s">Total today '+f2(other+x.v)+(x.id!==billed&&x.v<best?' ('+f2(x.v-best)+')':'')+'</span>')+'</div>').join("")+'</div>';
+    }else if(o.tcm){
       const alt=pv.best==="time"?pv.time:pv.mdm;
       h+='<div class="cmp"><div class="best"><span class="k">TCM<span class="badge">Billed</span></span><span class="v">'+o.tcm+'</span><span class="s">'+LV[pv.mdm.level]+' MDM · '+f2(W[o.tcm])+' wRVU · time doesn\'t count</span></div><div><span class="k">Office visit instead</span><span class="v">'+alt.code+(S.visit==="annual"?"-25":"")+'</span><span class="s">'+(pv.best==="time"?S.minutes+" min":LV[pv.mdm.level]+" MDM")+' · '+f2(alt.base)+' wRVU</span></div></div>';
     }else{
