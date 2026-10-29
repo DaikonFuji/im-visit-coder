@@ -480,6 +480,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
 <footer class="legal wrap">
   <p><b>© 2026 Anh Si Le, D.O. All rights reserved.</b> IM Visit Coder, including its design, code, decision logic, and written content, is the intellectual property of its author. It is provided for personal clinical reference only. No part of it may be copied, modified, redistributed, resold, licensed, or used in any product or service offered for payment or other commercial benefit without prior written permission from the author.</p>
   <p>CPT® codes and descriptions are copyright American Medical Association; CPT is a registered trademark of the AMA. HCPCS codes and work RVUs are from the CMS Physician Fee Schedule. This tool is a reference aid, not legal, compliance, or billing advice; code only what your documentation supports.</p>
+  <p>Version: Oct 29, 2026 06:58 AM CT</p>
 </footer>
 <div id="bar" role="button" tabindex="0" aria-label="Jump to result"><div class="bc" id="bar-codes"></div><div class="bt" id="bar-total"></div></div>
 
@@ -755,6 +756,8 @@ function compute(){
     if(annual&&mc)out.notes.push({t:"info",m:"The AWV can be done by telehealth; vitals can be patient-reported. The IPPE (Welcome to Medicare) can't."});
     if(S.visit==="tcm")out.notes.push({t:"info",m:"TCM can be done by telehealth for Medicare; check other plans."});
   }
+  if(!out.tcmCmp&&pv){const em=out.lines.find(l=>/^992/.test(l.code));
+    if(em)out.tcmCmp={tc:null,g:out.lines.some(l=>l.code==="G2211")?W.G2211:0,mod:em.mod.split("-")[0]==="25"?"25":"",reason:"Not marked as post-discharge",offer:S.visit==="fu"||(annual&&mc)};}
   out.total=out.lines.reduce((s,l)=>s+l.w*l.units,0);
   return out;
 }
@@ -847,7 +850,7 @@ function render(){
       const billed=o.tcm?"tcm":pv.best;
       const chosenV=opts.find(x=>x.id===billed).v||0, other=o.total-chosenV;
       const best=Math.max(...opts.map(x=>x.v||0));
-      h+='<div class="cmp3">'+opts.map(x=>'<div class="'+(x.id===billed?"best":"")+(x.v===null?" na":"")+'"><span class="k">'+x.k+(x.id===billed?'<span class="badge">Billed</span>':'')+'</span><span class="v">'+x.code+'</span><span class="big3">'+(x.v===null?"—":f2(x.v))+'</span><span class="s">'+x.s+'</span>'+(x.v===null?'':'<span class="s">Total today '+f2(other+x.v)+(x.id!==billed&&x.v<best?' ('+f2(x.v-best)+')':'')+'</span>')+'</div>').join("")+'</div>';
+      h+='<div class="cmp3">'+opts.map(x=>'<div class="'+(x.id===billed?"best":"")+(x.v===null?" na":"")+'"><span class="k">'+x.k+(x.id===billed?'<span class="badge">Billed</span>':'')+'</span><span class="v">'+x.code+'</span><span class="big3">'+(x.v===null?"—":f2(x.v))+'</span><span class="s">'+x.s+'</span>'+(x.id==="tcm"&&c.offer?'<button class="btn" id="mark-tcm" style="min-height:34px;padding:4px 8px;font-size:12px">Discharged in the last 14 days?</button>':'')+(x.v===null?'':'<span class="s">Total today '+f2(other+x.v)+(x.id!==billed&&x.v<best?' ('+f2(x.v-best)+')':'')+'</span>')+'</div>').join("")+'</div>';
     }else if(o.tcm){
       const alt=pv.best==="time"?pv.time:pv.mdm;
       h+='<div class="cmp"><div class="best"><span class="k">TCM<span class="badge">Billed</span></span><span class="v">'+o.tcm+'</span><span class="s">'+LV[pv.mdm.level]+' MDM · '+f2(W[o.tcm])+' wRVU · time doesn\'t count</span></div><div><span class="k">Office visit instead</span><span class="v">'+alt.code+(S.visit==="annual"?"-25":"")+'</span><span class="s">'+(pv.best==="time"?S.minutes+" min":LV[pv.mdm.level]+" MDM")+' · '+f2(alt.base)+' wRVU</span></div></div>';
@@ -876,6 +879,7 @@ function render(){
   $("#copy").onclick=e=>{const txt=summary+" — "+f2(o.total)+" wRVU";const b=e.currentTarget;
     const done=()=>{b.textContent="Copied";setTimeout(()=>b.textContent="Copy codes",1500)};
     try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(_){b.textContent=txt}};
+  if($("#mark-tcm"))$("#mark-tcm").onclick=()=>{if(S.visit==="annual")S.atcm="yes";else S.visit="tcm";render();$("#tcm-box").scrollIntoView({behavior:"smooth",block:"center"});};
   $("#save").onclick=()=>{if(!o.lines.length){toast("Nothing to save yet");return;}
     const vt=S.visit==="annual"&&o.tcm?"Annual + post-discharge":{annual:"Annual",fu:"Follow-up",tcm:"Post-discharge"}[S.visit], py={medicare:"Medicare",medicaid:"IL Medicaid",private:"Private"}[S.payer];
     saveEntry(vt+" · "+py,summary,o.total);};
