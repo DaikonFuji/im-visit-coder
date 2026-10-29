@@ -249,9 +249,14 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
             <div class="seg" data-key="setting"><button data-val="office">In person</button><button data-val="video">Video<small>real-time audio + video</small></button><button data-val="audio">Phone only<small>audio, no video</small></button></div></div>
           <div class="field" id="f-ptloc"><div class="label">Where was the patient?</div>
             <div class="seg" data-key="ptLoc"><button data-val="home">At home<small>POS 10</small></button><button data-val="other">Somewhere else<small>POS 02</small></button></div></div>
-          <div class="seg" data-key="visit"><button data-val="annual">Annual physical</button><button data-val="fu">Follow-up / problem visit</button><button data-val="tcm">Post-discharge (TCM)</button></div>
+          <div class="seg" data-key="visit"><button data-val="annual">Annual physical</button><button data-val="fu">Follow-up / problem visit</button><button data-val="preop">Pre-op clearance</button><button data-val="tcm">Post-discharge (TCM)</button></div>
           <div class="field" id="f-mplan"><div class="label">How your clinic bills Medicaid annuals</div>
             <div class="seg" data-key="mannual"><button data-val="mco">Managed care plan<small>preventive + -25 visit</small></button><button data-val="ffs">HFS fee-for-service<small>one code per visit</small></button><button data-val="office">Office visit only<small>no preventive code</small></button></div></div>
+          <div id="preop-box" class="field">
+            <div class="label">Pre-op exam type <span class="hint">(first diagnosis code)</span></div>
+            <div class="seg" data-key="preopType"><button data-val="810">Cardiovascular<small>Z01.810</small></button><button data-val="811">Respiratory<small>Z01.811</small></button><button data-val="818">Other<small>Z01.818</small></button><button data-val="812">Labs only<small>Z01.812</small></button></div>
+            <div class="hint">Then the reason for surgery, then each condition you assessed for risk. Use step 3 for those conditions, step 4 if you spoke with the surgeon or anesthesia, and step 7 for an ECG.</div>
+          </div>
           <div id="tcm-box" class="row2">
             <div class="field"><div class="label">Contact within 2 business days of discharge?</div><div class="hint">Phone, portal or in person; clinical staff can make it. Two documented attempts also count.</div>
               <div class="seg" data-key="tcmContact"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
@@ -466,6 +471,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
           <tr><td>Complex CCM, staff 60 min (+30)</td><td class="c">99487 (+99489)</td><td class="n">1.81 (+1.00)</td><td>Care plan substantially revised</td></tr>
           <tr><td>PCM, physician / staff 30 min</td><td class="c">99424 / 99426</td><td class="n">1.45 / 1.00</td><td>One high-risk condition</td></tr>
           <tr><td>APCM levels 1 / 2 / 3</td><td class="c">G0556 / G0557 / G0558</td><td class="n">0.25 / 0.77 / 1.67</td><td>Medicare; no time; not with CCM/PCM/TCM same month</td></tr>
+          <tr><td>Pre-op clearance</td><td class="c">99202–99215</td><td class="n">by MDM/time</td><td>Dx: Z01.810/.811/.818 first, then reason for surgery, then risk conditions. No consult codes. Add 93000 if ECG done</td></tr>
           <tr><td>Cognitive assessment &amp; care plan</td><td class="c">99483</td><td class="n">3.84</td><td>All 11 elements; once per 180 days</td></tr>
         </table></div>
       </section>
@@ -482,7 +488,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
 <footer class="legal wrap">
   <p><b>© 2026 Anh Si Le, D.O. All rights reserved.</b> IM Visit Coder, including its design, code, decision logic, and written content, is the intellectual property of its author. It is provided for personal clinical reference only. No part of it may be copied, modified, redistributed, resold, licensed, or used in any product or service offered for payment or other commercial benefit without prior written permission from the author.</p>
   <p>CPT® codes and descriptions are copyright American Medical Association; CPT is a registered trademark of the AMA. HCPCS codes and work RVUs are from the CMS Physician Fee Schedule. This tool is a reference aid, not legal, compliance, or billing advice; code only what your documentation supports.</p>
-  <p>Version: Oct 29, 2026 08:37 AM CT</p>
+  <p>Version: Oct 29, 2026 03:47 PM CT</p>
 </footer>
 <div id="bar" role="button" tabindex="0" aria-label="Jump to result"><div class="bc" id="bar-codes"></div><div class="bt" id="bar-total"></div></div>
 
@@ -562,7 +568,7 @@ const addonOK=a=>(!a.only||S.awv===a.only)&&(!a.req||S[a.req]);
 const LV=["—","Straightforward","Low","Moderate","High"];
 const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",
  prob:{minor:0,simple:0,sacute:0,comp:0,cs:1,cw:1,csev:0,undx:0,threat:0},items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false,
- planMedicaid:"mcounk",planPrivate:"unk",setting:"office",ptLoc:"home",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",atcm:"no",
+ planMedicaid:"mcounk",planPrivate:"unk",setting:"office",ptLoc:"home",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",atcm:"no",preopType:"810",
  evType:"portal",evInit:"yes",evPrior:"no",evLed:"no",evMin:12,cmProg:"ccm",cmWho:"staff",cmComplex:"no",cmMin:25,cmCond:"2",cmQmb:"no",cog:[]};
 const clone=o=>JSON.parse(JSON.stringify(o));
 const BLANK=Object.assign(clone(EXAMPLE),{prob:{minor:0,simple:0,sacute:0,comp:0,cs:0,cw:0,csev:0,undx:0,threat:0},items:0,risk:"min",minutes:0});
@@ -758,13 +764,23 @@ function compute(){
     if(annual&&mc)out.notes.push({t:"info",m:"The AWV can be done by telehealth; vitals can be patient-reported. The IPPE (Welcome to Medicare) can't."});
     if(S.visit==="tcm")out.notes.push({t:"info",m:"TCM can be done by telehealth for Medicare; check other plans."});
   }
+  if(S.visit==="preop"){
+    const dx={"810":"Z01.810 (pre-procedure cardiovascular exam)","811":"Z01.811 (pre-procedure respiratory exam)","818":"Z01.818 (other pre-procedure exam)","812":"Z01.812 (pre-procedure lab exam)"}[S.preopType];
+    out.notes.unshift({t:"info",m:"Pre-op diagnosis order: 1) "+dx+", 2) the reason for surgery, 3) each condition you assessed for risk. A Z01.81x code alone is often denied as a routine exam."});
+    if(!tele&&!S.ecg)out.notes.push({t:"up",m:"ECG done and read in the office today? Add 93000 in step 7 (+0.17)."});
+    if(!S.discuss)out.notes.push({t:"up",m:"Talked with the surgeon or anesthesia about management? Check it in step 4; it can raise data to moderate."});
+    if(S.risk!=="high")out.notes.push({t:"info",m:"Pre-op medication changes (anticoagulants, diabetes medications, holding ACE inhibitors) count as prescription drug management: moderate risk. \"Decision regarding elective major surgery\" (high risk) is debated for the clearing physician; ask your coding team before using it."});
+    out.notes.push({t:"info",m:"Bill a regular office visit: consult codes (99241–99245) no longer exist. Your clearance isn't part of the surgeon's payment."});
+  }
   if(!out.tcmCmp&&pv){const em=out.lines.find(l=>/^992/.test(l.code));
     if(em)out.tcmCmp={tc:null,g:out.lines.some(l=>l.code==="G2211")?W.G2211:0,mod:em.mod.split("-")[0]==="25"?"25":"",reason:"Not marked as post-discharge",offer:S.visit==="fu"||(annual&&mc)};}
   out.total=out.lines.reduce((s,l)=>s+l.w*l.units,0);
   return out;
 }
 function docStatement(o){
-  const r=docStatement0(o); if(!r||S.setting==="office")return r;
+  let r=docStatement0(o);
+  if(r&&S.visit==="preop")r={title:r.title.replace("follow-up / problem visit","pre-op clearance"),mdmTip:r.mdmTip,text:"Preoperative evaluation requested by Dr. *** for *** (procedure) scheduled on ***. Perioperative risk assessment and recommendations are documented in the Assessment and Plan and were sent to the surgical team. "+r.text};
+  if(!r||S.setting==="office")return r;
   const audio=S.setting==="audio";
   const t="This visit was conducted by "+(audio?"audio-only":"real-time audio-video")+" telehealth with the patient's consent. Patient location: "+(S.ptLoc==="home"?"home":"***")+" (***, state ***). Provider location: ***. Participants: patient"+" and ***."+(audio?" Video was not used because the patient was unable to use, or did not consent to, video; I was capable of audio-video.":"")+" ";
   return {title:r.title+" · telehealth",text:t+r.text,mdmTip:r.mdmTip};
@@ -819,6 +835,7 @@ function render(){
   $("#annual-box").hidden=!annual;
   const awvTcmUI=annual&&mc&&S.atcm==="yes";
   $("#tcm-box").hidden=!(S.visit==="tcm"||awvTcmUI);
+  $("#preop-box").hidden=S.visit!=="preop";
   $("#f-atcm").hidden=!mc;
   $("#f-aprob").hidden=awvTcmUI;
   $("#f-ptloc").hidden=S.setting==="office";
@@ -883,7 +900,7 @@ function render(){
     try{navigator.clipboard.writeText(txt).then(done,()=>{b.textContent=txt})}catch(_){b.textContent=txt}};
   if($("#mark-tcm"))$("#mark-tcm").onclick=()=>{if(S.visit==="annual")S.atcm="yes";else S.visit="tcm";render();$("#tcm-box").scrollIntoView({behavior:"smooth",block:"center"});};
   $("#save").onclick=()=>{if(!o.lines.length){toast("Nothing to save yet");return;}
-    const vt=S.visit==="annual"&&o.tcm?"Annual + post-discharge":{annual:"Annual",fu:"Follow-up",tcm:"Post-discharge"}[S.visit], py={medicare:"Medicare",medicaid:"IL Medicaid",private:"Private"}[S.payer];
+    const vt=S.visit==="annual"&&o.tcm?"Annual + post-discharge":{annual:"Annual",fu:"Follow-up",tcm:"Post-discharge",preop:"Pre-op"}[S.visit], py={medicare:"Medicare",medicaid:"IL Medicaid",private:"Private"}[S.payer];
     saveEntry(vt+" · "+py,summary,o.total);};
   $("#reset").onclick=()=>{doReset();};
   $("#example").onclick=()=>{S=clone(EXAMPLE);render();};
