@@ -122,6 +122,7 @@ details.help ul{margin:4px 0 0;padding-left:18px;display:grid;gap:6px;color:var(
 .cmp .best{background:var(--win-soft)}
 .cmp .best .k{color:var(--win)}
 .badge{display:inline-block;font:600 11px var(--f-body);letter-spacing:.06em;text-transform:uppercase;background:var(--win);color:var(--surface);padding:1px 6px;border-radius:4px;margin-left:4px;vertical-align:1px}
+.topbar{display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:12px}
 .cmp3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
 .cmp3>div{padding:10px 10px;display:grid;gap:3px;align-content:start;min-width:0}
 .cmp3>div+div{border-left:1px solid var(--line)}
@@ -226,6 +227,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
   </header>
 
   <main id="view-calc">
+    <div class="topbar"><span class="hint">Starting a new patient?</span><button class="btn" id="reset-top">Reset visit</button></div>
     <div class="grid">
       <div class="inputs">
         <section class="step">
@@ -480,7 +482,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
 <footer class="legal wrap">
   <p><b>© 2026 Anh Si Le, D.O. All rights reserved.</b> IM Visit Coder, including its design, code, decision logic, and written content, is the intellectual property of its author. It is provided for personal clinical reference only. No part of it may be copied, modified, redistributed, resold, licensed, or used in any product or service offered for payment or other commercial benefit without prior written permission from the author.</p>
   <p>CPT® codes and descriptions are copyright American Medical Association; CPT is a registered trademark of the AMA. HCPCS codes and work RVUs are from the CMS Physician Fee Schedule. This tool is a reference aid, not legal, compliance, or billing advice; code only what your documentation supports.</p>
-  <p>Version: Oct 29, 2026 07:03 AM CT</p>
+  <p>Version: Oct 29, 2026 08:37 AM CT</p>
 </footer>
 <div id="bar" role="button" tabindex="0" aria-label="Jump to result"><div class="bc" id="bar-codes"></div><div class="bt" id="bar-total"></div></div>
 
@@ -883,10 +885,11 @@ function render(){
   $("#save").onclick=()=>{if(!o.lines.length){toast("Nothing to save yet");return;}
     const vt=S.visit==="annual"&&o.tcm?"Annual + post-discharge":{annual:"Annual",fu:"Follow-up",tcm:"Post-discharge"}[S.visit], py={medicare:"Medicare",medicaid:"IL Medicaid",private:"Private"}[S.payer];
     saveEntry(vt+" · "+py,summary,o.total);};
-  $("#reset").onclick=()=>{S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,setting:S.setting,ptLoc:S.ptLoc,mannual:S.mannual,planMedicaid:S.planMedicaid,planPrivate:S.planPrivate});render();};
+  $("#reset").onclick=()=>{doReset();};
   $("#example").onclick=()=>{S=clone(EXAMPLE);render();};
   renderMore(); renderTrack();
 }
+function doReset(){S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,setting:S.setting,ptLoc:S.ptLoc,mannual:S.mannual,planMedicaid:S.planMedicaid,planPrivate:S.planPrivate});render();window.scrollTo({top:0,behavior:"smooth"});toast("Visit reset");}
 function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function opt(v,arr){return arr.map(([k,l])=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+l+'</option>').join("");}
 function toast(m){let t=$(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t);}t.style.bottom=$("#bar").hidden||innerWidth>=880?"calc(20px + env(safe-area-inset-bottom,0px))":"";t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
@@ -1000,6 +1003,7 @@ $("#proc-list").innerHTML=PROCS.map(p=>'<button class="chk addon" data-flag="'+p
 $("#plan").addEventListener("change",e=>{const v=e.target.value;if(S.payer==="medicaid"){S.planMedicaid=v;if(v==="ffs"&&S.mannual==="mco")S.mannual="ffs";else if(v!=="ffs"&&S.mannual==="ffs")S.mannual="mco";}else S.planPrivate=v;render();});
 $("#plan-edit").addEventListener("change",e=>{const t=e.target;if(!t.dataset.pe)return;const p=PLANS[S.payer].find(x=>x.id===t.dataset.id);if(p){p[t.dataset.pe]=t.value;store.set("imvc-plans-v1",PLANS);t.blur();render();}});
 $("#goal").addEventListener("input",e=>{store.set("imvc-goal",e.target.value);renderTrack();});
+$("#reset-top").addEventListener("click",doReset);
 $("#minutes").addEventListener("input",e=>{const v=parseInt(e.target.value,10);S.minutes=isNaN(v)?0:Math.max(0,Math.min(300,v));render();});
 const jump=()=>$("#result-anchor").scrollIntoView({behavior:"smooth",block:"start"});
 $("#bar").addEventListener("click",jump);$("#bar").addEventListener("keydown",e=>{if(e.key==="Enter")jump();});
