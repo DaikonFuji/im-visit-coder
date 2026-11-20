@@ -216,7 +216,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
   <header class="top">
     <div>
       <h1>IM Visit Coder</h1>
-      <div class="sub">Internal medicine office billing · CMS 2026 work RVUs · Illinois Medicaid</div>
+      <div class="sub" id="subtitle">Internal medicine office billing · CMS 2026 work RVUs · Illinois Medicaid</div>
     </div>
     <nav class="tabs" role="tablist">
       <button id="tab-calc" role="tab" aria-selected="true" data-tab="calc">Code a visit</button>
@@ -232,10 +232,14 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
       <div class="inputs">
         <section class="step">
           <h2><span class="n">1</span>Patient &amp; payer</h2>
+          <div class="field"><div class="label">Date of service</div>
+            <div class="seg" data-key="year"><button data-val="2026">2026</button><button data-val="2027">2027<small>new Medicare rules</small></button></div></div>
           <div class="field"><div class="label">Patient</div>
             <div class="seg" data-key="pt"><button data-val="new">New<small>no visit in 3 yrs</small></button><button data-val="est">Established</button></div></div>
           <div class="field"><div class="label">Insurance</div>
             <div class="seg" data-key="payer"><button data-val="medicare">Medicare</button><button data-val="medicaid">IL Medicaid</button><button data-val="private">Private</button></div></div>
+          <div class="field" id="f-aco"><div class="label">Are you in a Medicare Shared Savings Program ACO? <span class="hint">(2027: modifier B2, +32%, instead of B1)</span></div>
+            <div class="seg" data-key="aco"><button data-val="no">No / not sure</button><button data-val="yes">Yes</button></div></div>
           <div class="field" id="f-plan"><label class="label" for="plan">Plan</label>
             <select id="plan"></select>
             <details class="help"><summary>Edit what each plan pays</summary><div class="hint">Saved on this phone only. Ask your billing team, then update these.</div><div id="plan-edit"></div>
@@ -333,7 +337,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
           <div class="field"><div class="label" id="time-label">Your total minutes today</div>
             <div class="hint" id="time-hint">Everything you did on this date: chart prep, visit, orders, notes, coordination. Not staff time.</div>
             <div class="stepper"><button data-tstep="-5" aria-label="5 minutes less">−5</button><input id="minutes" type="number" inputmode="numeric" min="0" max="300" value="0" aria-labelledby="time-label"><button data-tstep="5" aria-label="5 minutes more">+5</button></div></div>
-          <div class="field" id="f-g2211"><div class="label">Ongoing longitudinal care or serious/complex condition? <span class="hint">(G2211)</span></div>
+          <div class="field" id="f-g2211"><div class="label">Ongoing longitudinal care or serious/complex condition? <span class="hint" id="g2211-tag">(G2211)</span></div>
             <div class="seg" data-key="g2211"><button data-val="yes">Yes</button><button data-val="no">No</button></div></div>
         </section>
 
@@ -412,6 +416,19 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
   <main id="view-rules" hidden>
     <div class="ref">
       <section>
+        <h3>What changes for Medicare on January 1, 2027</h3>
+        <p>From the CY 2027 Physician Fee Schedule final rule (Nov 4, 2026). Pick 2027 under "Date of service" to apply these.</p>
+        <div class="tw"><table>
+          <tr><th>Change</th><th>2026</th><th>2027</th></tr>
+          <tr><td>Complexity add-on</td><td>G2211 (+0.33 wRVU)</td><td>Modifier <b>B1</b> on the office visit: +16% (≈ +0.31 on 99214, +0.45 on 99215). <b>B2</b> (+32%) for Shared Savings ACO clinicians. Same rules as G2211, including the -25 exception for AWV, vaccines and preventive services</td></tr>
+          <tr><td>-25 visit + 0-day procedure (joint/trigger point injection, biopsy, wax removal)</td><td>Both paid in full</td><td>Lower-valued service paid at 80%. 10- and 90-day procedures not affected</td></tr>
+          <tr><td>Advance care planning</td><td>99497/99498 for you or staff</td><td>99497/99498 only for your own time; staff ACP uses G0572/G0573</td></tr>
+          <tr><td>Tobacco counseling 99406/99407</td><td>0.24 / 0.50</td><td>About 19% higher (≈0.29 / 0.60)</td></tr>
+          <tr><td>Office visit work RVUs (99202–99215)</td><td colspan="2">Unchanged. Payment per RVU drops 2.31% ($32.63), which doesn't change wRVUs</td></tr>
+          <tr><td>Telehealth from home</td><td colspan="2">Still allowed through Dec 31, 2027</td></tr>
+        </table></div>
+      </section>
+      <section>
         <h3>Office visits: wRVU and minimum time</h3>
         <p>Bill the higher of MDM or total time. MDM needs 2 of 3: problems, data, risk.</p>
         <div class="tw"><table>
@@ -450,7 +467,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
           <tr><th>Rule</th><th>Medicare</th><th>IL Medicaid</th><th>Private</th></tr>
           <tr><td>Annual visit</td><td>IPPE / AWV only</td><td>99385–99397 + Dx Z00.00 / Z00.01. 1 per 333 days (2nd with new PCP or female exam). Ages 18–20 = Healthy Kids (EPSDT)</td><td>99385–99397 + Dx Z00.00 / Z00.01</td></tr>
           <tr><td>Annual + problem (-25)</td><td>Paid</td><td>Managed care: usually paid with -25 (some plans 50%). HFS fee-for-service: one code only</td><td>Usually paid; some cut to 50%</td></tr>
-          <tr><td>G2211 (+0.33)</td><td>Paid; OK on -25 with AWV/IPPE since 2025</td><td>Not paid; don't bill</td><td>Follow-ups only, if the plan pays it. Never with an annual (-25). Not paid by UHC commercial or Ambetter IL</td></tr>
+          <tr><td>G2211 (+0.33); 2027: modifier B1</td><td>Paid; OK on -25 with AWV/IPPE/vaccines since 2025. Becomes B1 (+16%) in 2027</td><td>Not paid; don't bill</td><td>Follow-ups only, if the plan pays it. Never with an annual (-25). Not paid by UHC commercial or Ambetter IL</td></tr>
           <tr><td>Prolonged (+0.61 / 15 min)</td><td>G2212: 99215 at 69 min, 99205 at 89</td><td>99417: 55 / 75 min (verify)</td><td>99417: 55 / 75 min</td></tr>
           <tr><td>AWV extras</td><td>ACP 99497-33 (1.50) / 99498 (1.40); G0444 depression (0.18); G0442 alcohol screen (0.18), G0443 counseling (0.60); G0537 ASCVD risk (0.18); G0446 CVD counseling (0.60); G0136 activity &amp; nutrition (0.18); 99406/99407 tobacco (0.24/0.50); G0447 obesity (0.60); G0296 lung screening visit (0.52); G0101 (0.44), Q0091 (0.36)</td><td>–</td><td>–</td></tr>
         </table></div>
@@ -488,7 +505,7 @@ select{min-height:44px;border:1px solid var(--line);border-radius:8px;background
 <footer class="legal wrap">
   <p><b>© 2026 Anh Si Le, D.O. All rights reserved.</b> IM Visit Coder, including its design, code, decision logic, and written content, is the intellectual property of its author. It is provided for personal clinical reference only. No part of it may be copied, modified, redistributed, resold, licensed, or used in any product or service offered for payment or other commercial benefit without prior written permission from the author.</p>
   <p>CPT® codes and descriptions are copyright American Medical Association; CPT is a registered trademark of the AMA. HCPCS codes and work RVUs are from the CMS Physician Fee Schedule. This tool is a reference aid, not legal, compliance, or billing advice; code only what your documentation supports.</p>
-  <p>Version: Oct 29, 2026 03:47 PM CT</p>
+  <p>Version: Nov 20, 2026 01:35 PM CT</p>
 </footer>
 <div id="bar" role="button" tabindex="0" aria-label="Jump to result"><div class="bc" id="bar-codes"></div><div class="bt" id="bar-total"></div></div>
 
@@ -518,6 +535,10 @@ const ADDONS=[
  {k:"pelv",code:"G0101",label:"Screening pelvic and breast exam",hint:"Every 2 years (yearly if high risk)"},
  {k:"pap",code:"Q0091",label:"Screening Pap collection",hint:"With the pelvic exam when a Pap is due"}
 ];
+const W26={"99406":.24,"99407":.5}, W27={"99406":.29,"99407":.6};
+const Y27=()=>S.year==="2027";
+const cxName=()=>Y27()?(S.aco==="yes"&&S.payer==="medicare"?"B2":"B1"):"G2211";
+const cx=code=>Y27()?Math.round(W[code]*(cxName()==="B2"?.32:.16)*100)/100:W.G2211;
 const PROCS=[
  {k:"ecg",code:"93000",w:.17,label:"ECG with interpretation",hint:"No -25 needed"},
  {k:"spiro",code:"94010",w:.17,label:"Spirometry",hint:"No -25 needed",excl:"spiro2"},
@@ -528,14 +549,14 @@ const PROCS=[
  {k:"flu",code:"G0008",w:0,m25:1,vax:1,only:"mc",label:"Flu shot given (Medicare)",hint:"Paid as a flat fee; wRVU credit varies by group"},
  {k:"pneu",code:"G0009",w:0,m25:1,vax:1,only:"mc",label:"Pneumococcal vaccine given (Medicare)",hint:"Paid as a flat fee; wRVU credit varies by group"},
  {k:"covid",code:"90480",w:.24,m25:1,vax:1,label:"COVID-19 vaccine given",hint:"All payers"},
- {k:"j1",code:"20610",w:.77,m25:1,label:"Large joint injection / aspiration",hint:"Knee, shoulder, hip, subacromial bursa"},
- {k:"j2",code:"20605",w:.66,m25:1,label:"Medium joint injection",hint:"Wrist, elbow, ankle, olecranon bursa"},
- {k:"j3",code:"20600",w:.64,m25:1,label:"Small joint injection",hint:"Fingers, toes"},
- {k:"tp",code:"20552",w:.64,m25:1,label:"Trigger point injection, 1–2 muscles",hint:""},
- {k:"ts",code:"20550",w:.73,m25:1,label:"Tendon sheath / ligament injection",hint:"e.g. trigger finger, de Quervain, plantar fascia"},
- {k:"wax",code:"69210",w:.59,m25:1,label:"Impacted ear wax removal with instruments",hint:"Curette or forceps. Irrigation alone (69209) has no wRVU"},
- {k:"bx1",code:"11102",w:.64,m25:1,label:"Skin biopsy, shave (tangential)",hint:"First lesion"},
- {k:"bx2",code:"11104",w:.81,m25:1,label:"Skin biopsy, punch",hint:"First lesion"},
+ {k:"j1",g0:1,code:"20610",w:.77,m25:1,label:"Large joint injection / aspiration",hint:"Knee, shoulder, hip, subacromial bursa"},
+ {k:"j2",g0:1,code:"20605",w:.66,m25:1,label:"Medium joint injection",hint:"Wrist, elbow, ankle, olecranon bursa"},
+ {k:"j3",g0:1,code:"20600",w:.64,m25:1,label:"Small joint injection",hint:"Fingers, toes"},
+ {k:"tp",g0:1,code:"20552",w:.64,m25:1,label:"Trigger point injection, 1–2 muscles",hint:""},
+ {k:"ts",g0:1,code:"20550",w:.73,m25:1,label:"Tendon sheath / ligament injection",hint:"e.g. trigger finger, de Quervain, plantar fascia"},
+ {k:"wax",g0:1,code:"69210",w:.59,m25:1,label:"Impacted ear wax removal with instruments",hint:"Curette or forceps. Irrigation alone (69209) has no wRVU"},
+ {k:"bx1",g0:1,code:"11102",w:.64,m25:1,label:"Skin biopsy, shave (tangential)",hint:"First lesion"},
+ {k:"bx2",g0:1,code:"11104",w:.81,m25:1,label:"Skin biopsy, punch",hint:"First lesion"},
  {k:"id",code:"10060",w:1.19,m25:1,g10:1,label:"Incision & drainage, simple abscess",hint:"10-day global period"},
  {k:"ak",code:"17000",w:.59,m25:1,g10:1,label:"Destroy actinic keratosis, first lesion",hint:"Cryotherapy; 10-day global"},
  {k:"wart",code:"17110",w:.68,m25:1,g10:1,label:"Destroy warts / benign lesions, up to 14",hint:"Cryotherapy; 10-day global"},
@@ -568,7 +589,7 @@ const addonOK=a=>(!a.only||S.awv===a.only)&&(!a.req||S[a.req]);
 const LV=["—","Straightforward","Low","Moderate","High"];
 const EXAMPLE={pt:"est",payer:"medicare",mannual:"mco",visit:"fu",awv:"sub",age:"65",aprob:"yes",
  prob:{minor:0,simple:0,sacute:0,comp:0,cs:1,cw:1,csev:0,undx:0,threat:0},items:2,historian:false,interp:false,discuss:false,risk:"mod",minutes:35,g2211:"yes",acp:false,dep:false,
- planMedicaid:"mcounk",planPrivate:"unk",setting:"office",ptLoc:"home",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",atcm:"no",preopType:"810",
+ planMedicaid:"mcounk",planPrivate:"unk",setting:"office",ptLoc:"home",tcmContact:"yes",tcmDays:"7",tcmMed:"yes",atcm:"no",year:(new Date()>=new Date(2027,0,1)?"2027":"2026"),aco:"no",preopType:"810",
  evType:"portal",evInit:"yes",evPrior:"no",evLed:"no",evMin:12,cmProg:"ccm",cmWho:"staff",cmComplex:"no",cmMin:25,cmCond:"2",cmQmb:"no",cog:[]};
 const clone=o=>JSON.parse(JSON.stringify(o));
 const BLANK=Object.assign(clone(EXAMPLE),{prob:{minor:0,simple:0,sacute:0,comp:0,cs:0,cw:0,csev:0,undx:0,threat:0},items:0,risk:"min",minutes:0});
@@ -671,9 +692,9 @@ function compute(){
     const L=pv.mdm.level, ok=S.tcmContact==="yes"&&S.tcmMed==="yes"&&S.tcmDays!=="late";
     let tc=null;
     if(ok){if(L===4&&S.tcmDays==="7")tc="99496";else if(L>=3)tc="99495";}
-    const emBase=(pv.best==="time"?pv.time.base:pv.mdm.base)+(g2211Pays?W.G2211:0);
+    const emBase=(pv.best==="time"?pv.time.base:pv.mdm.base)+(g2211Pays?cx(pv.best==="time"?pv.time.code:pv.mdm.code):0);
     const alt=annual?"an office visit with -25":"a regular office visit";
-    out.tcmCmp={tc,g:g2211Pays?W.G2211:0,mod:emMod,
+    out.tcmCmp={tc,gOn:!!g2211Pays,mod:emMod,
       reason:!ok?"Needs "+[S.tcmContact!=="yes"?"contact within 2 business days":"",S.tcmMed!=="yes"?"med reconciliation":"",S.tcmDays==="late"?"visit within 14 days":""].filter(Boolean).join(" + "):(!tc?"Needs moderate or high MDM":null)};
     if(!ok)out.notes.push({t:"warn",m:"TCM not allowed: it needs "+[S.tcmContact!=="yes"?"contact within 2 business days of discharge":"",S.tcmMed!=="yes"?"medication reconciliation by this visit":"",S.tcmDays==="late"?"a visit within 14 days of discharge":""].filter(Boolean).join(" and ")+". Billed as "+alt+" instead."});
     else if(!tc)out.notes.push({t:"warn",m:"TCM needs at least moderate MDM. Billed as "+alt+" instead."});
@@ -720,7 +741,10 @@ function compute(){
     pushEM(pv,need25?"25":"",add);
   }
   if(g2211Pays){
-    add("G2211");
+    if(Y27()){const em=out.lines.find(l=>/^992/.test(l.code));
+      if(em){const extra=cx(em.code);em.mod=em.mod?em.mod+"-"+cxName():cxName();em.w=Math.round((em.w+extra)*100)/100;em.desc+=" + "+cxName()+" complexity modifier (+"+(cxName()==="B2"?"32":"16")+"%, ≈+"+f2(extra)+" wRVU)";out.cxOn=true;
+        out.notes.push({t:"info",m:"2027: G2211 is retired. Add modifier "+cxName()+" to the office visit instead (+"+(cxName()==="B2"?"32":"16")+"% of the visit). The wRVU shown adds "+(cxName()==="B2"?"32":"16")+"% of the visit's work RVU, per CMS's B1/B2 RVU file; confirm how your group credits it."});}}
+    else add("G2211");
     if(annual&&mc)out.notes.push({t:"info",m:"G2211 on a -25 visit is payable because it is billed with an AWV/IPPE (Medicare rule since 2025)."});
     if(pr)out.notes.push({t:"warn",m:"Many private plans don't pay G2211, including UnitedHealthcare commercial (since Sept 2024) and Ambetter IL (since Apr 2026). Medicare Advantage plans generally do. Confirm with the payer."});
   }
@@ -764,6 +788,12 @@ function compute(){
     if(annual&&mc)out.notes.push({t:"info",m:"The AWV can be done by telehealth; vitals can be patient-reported. The IPPE (Welcome to Medicare) can't."});
     if(S.visit==="tcm")out.notes.push({t:"info",m:"TCM can be done by telehealth for Medicare; check other plans."});
   }
+  if(Y27()){
+    if(mc&&need25&&procs.some(p=>p.g0)&&out.lines.some(l=>/^992/.test(l.code)&&/25/.test(l.mod)))out.notes.push({t:"warn",m:"2027 Medicare: a -25 office visit on the same day as a 0-day procedure (joint/trigger point injection, biopsy, wax removal) pays the lower-valued service at 80%. This is a payment cut; wRVU credit usually follows the codes billed, so check with your group."});
+    if(mc&&annual&&(S.acp||S.acp2))out.notes.push({t:"info",m:"2027: 99497/99498 are only for advance care planning time you personally spend. Time spent by your clinical staff is billed with the new codes G0572/G0573."});
+    if(out.lines.some(l=>l.code==="99406"||l.code==="99407"))out.notes.push({t:"info",m:"2027: tobacco counseling work RVUs rise about 19% (shown ≈0.29 / 0.60); exact values may differ slightly."});
+    out.notes.forEach(n=>{if(/G2211/.test(n.m)&&!/retired/.test(n.m))n.m=n.m.replace(/G2211/g,cxName()+" (formerly G2211)");});
+  }
   if(S.visit==="preop"){
     const dx={"810":"Z01.810 (pre-procedure cardiovascular exam)","811":"Z01.811 (pre-procedure respiratory exam)","818":"Z01.818 (other pre-procedure exam)","812":"Z01.812 (pre-procedure lab exam)"}[S.preopType];
     out.notes.unshift({t:"info",m:"Pre-op diagnosis order: 1) "+dx+", 2) the reason for surgery, 3) each condition you assessed for risk. A Z01.81x code alone is often denied as a routine exam."});
@@ -773,7 +803,7 @@ function compute(){
     out.notes.push({t:"info",m:"Bill a regular office visit: consult codes (99241–99245) no longer exist. Your clearance isn't part of the surgeon's payment."});
   }
   if(!out.tcmCmp&&pv){const em=out.lines.find(l=>/^992/.test(l.code));
-    if(em)out.tcmCmp={tc:null,g:out.lines.some(l=>l.code==="G2211")?W.G2211:0,mod:em.mod.split("-")[0]==="25"?"25":"",reason:"Not marked as post-discharge",offer:S.visit==="fu"||(annual&&mc)};}
+    if(em)out.tcmCmp={tc:null,gOn:out.lines.some(l=>l.code==="G2211")||!!out.cxOn,mod:em.mod.split("-")[0]==="25"?"25":"",reason:"Not marked as post-discharge",offer:S.visit==="fu"||(annual&&mc)};}
   out.total=out.lines.reduce((s,l)=>s+l.w*l.units,0);
   return out;
 }
@@ -810,7 +840,7 @@ function docStatement0(o){
       :"This visit is billed based on medical decision making as documented in the Assessment and Plan.";
     mdmTip=true;
   }
-  if(o.lines.some(l=>l.code==="G2211"))text+=" G2211: I am the continuing focal point for all needed health care services for this patient and/or am providing ongoing longitudinal care for a serious or complex condition (***).";
+  if(o.lines.some(l=>l.code==="G2211")||o.cxOn)text+=" "+cxName()+": I am the continuing focal point for all needed health care services for this patient and/or am providing ongoing longitudinal care for a serious or complex condition (***).";
   return {title,text,mdmTip};
 }
 function pushEM(pv,mod,add){
@@ -835,6 +865,11 @@ function render(){
   $("#annual-box").hidden=!annual;
   const awvTcmUI=annual&&mc&&S.atcm==="yes";
   $("#tcm-box").hidden=!(S.visit==="tcm"||awvTcmUI);
+  Object.assign(W,Y27()?W27:W26);
+  if(render.ly!==S.year){render.ly=S.year;$("#addon-list").innerHTML=ADDONS.map(a=>'<button class="chk addon" data-flag="'+a.k+'"><span><b>'+a.label+'</b> <span class="ac">'+a.code+' · '+W[a.code].toFixed(2)+'</span><small>'+a.hint+'</small></span></button>').join("");}
+  $("#subtitle").textContent="Internal medicine office billing · CMS "+S.year+" work RVUs · Illinois Medicaid";
+  $("#f-aco").hidden=!(Y27()&&S.payer==="medicare");
+  $("#g2211-tag").textContent=Y27()?"(modifier "+cxName()+", formerly G2211)":"(G2211)";
   $("#preop-box").hidden=S.visit!=="preop";
   $("#f-atcm").hidden=!mc;
   $("#f-aprob").hidden=awvTcmUI;
@@ -861,10 +896,11 @@ function render(){
   if(pv){
     const t=pv.time;
     if(o.tcmCmp){
-      const c=o.tcmCmp, g=c.g, m25=c.mod?"-"+c.mod:"";
+      const c=o.tcmCmp, gF=code=>c.gOn?cx(code):0, m25=c.mod?"-"+c.mod:"", cn=cxName(), y27=Y27();
+      const tag=code=>y27?(c.gOn?"-"+cn:""):(c.gOn?" + G2211":"");
       const opts=[
-        {k:"Office visit by MDM"+(m25?" (-25)":""),code:pv.mdm.code+m25+(g?" + G2211":""),v:pv.mdm.base+g,s:LV[pv.mdm.level]+" MDM",id:"mdm"},
-        {k:"Office visit by time"+(m25?" (-25)":""),code:pv.time?pv.time.code+m25+(pv.time.pro.units?" + "+pv.time.pro.units+"×"+pv.time.pro.code:"")+(g?" + G2211":""):"—",v:pv.time?pv.time.base+g:null,s:pv.time?S.minutes+" min":"Enter minutes in step 6",id:"time"},
+        {k:"Office visit by MDM"+(m25?" (-25)":""),code:pv.mdm.code+m25+tag(pv.mdm.code),v:pv.mdm.base+gF(pv.mdm.code),s:LV[pv.mdm.level]+" MDM",id:"mdm"},
+        {k:"Office visit by time"+(m25?" (-25)":""),code:pv.time?pv.time.code+m25+tag(pv.time.code)+(pv.time.pro.units?" + "+pv.time.pro.units+"×"+pv.time.pro.code:""):"—",v:pv.time?pv.time.base+gF(pv.time.code):null,s:pv.time?S.minutes+" min":"Enter minutes in step 6",id:"time"},
         {k:"TCM",code:c.tc||"—",v:c.tc?W[c.tc]:null,s:c.tc?(c.tc==="99496"?"High MDM, ≤7 days":"Moderate+ MDM, ≤14 days"):c.reason,id:"tcm"}];
       const billed=o.tcm?"tcm":pv.best;
       const chosenV=opts.find(x=>x.id===billed).v||0, other=o.total-chosenV;
@@ -906,7 +942,7 @@ function render(){
   $("#example").onclick=()=>{S=clone(EXAMPLE);render();};
   renderMore(); renderTrack();
 }
-function doReset(){S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,setting:S.setting,ptLoc:S.ptLoc,mannual:S.mannual,planMedicaid:S.planMedicaid,planPrivate:S.planPrivate});render();window.scrollTo({top:0,behavior:"smooth"});toast("Visit reset");}
+function doReset(){S=Object.assign(clone(BLANK),{payer:S.payer,pt:S.pt,setting:S.setting,ptLoc:S.ptLoc,mannual:S.mannual,planMedicaid:S.planMedicaid,planPrivate:S.planPrivate,year:S.year,aco:S.aco});render();window.scrollTo({top:0,behavior:"smooth"});toast("Visit reset");}
 function esc(t){return String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
 function opt(v,arr){return arr.map(([k,l])=>'<option value="'+k+'"'+(k===v?' selected':'')+'>'+l+'</option>').join("");}
 function toast(m){let t=$(".toast");if(!t){t=document.createElement("div");t.className="toast";t.setAttribute("role","status");document.body.appendChild(t);}t.style.bottom=$("#bar").hidden||innerWidth>=880?"calc(20px + env(safe-area-inset-bottom,0px))":"";t.textContent=m;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,1800);}
